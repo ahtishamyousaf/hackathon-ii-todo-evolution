@@ -108,7 +108,6 @@ A comprehensive journey through modern software development, from console app to
 ```
 hackathon-2/
 ├── README.md                      # This file (project overview)
-├── constitution.md                # Project principles (shared)
 ├── BONUS_FEATURE.md              # Bonus documentation
 ├── .gitignore                    # Git ignore rules
 ├── .python-version               # Python version (3.12)
@@ -118,7 +117,8 @@ hackathon-2/
 │   └── skills/                    # Agent skills (CRUD generator)
 │
 ├── .specify/                      # SpecKit Plus framework
-│   ├── memory/                    # Constitution and context
+│   ├── memory/
+│   │   └── constitution.md        # Project principles (actual)
 │   ├── templates/                 # Spec templates
 │   └── scripts/                   # Automation scripts
 │
@@ -263,7 +263,7 @@ Planned for Phase III:
 ## 📚 Documentation
 
 ### Core Documentation
-- [`constitution.md`](constitution.md) - Project principles and standards
+- [`.specify/memory/constitution.md`](.specify/memory/constitution.md) - Project principles and standards
 - [`BONUS_FEATURE.md`](BONUS_FEATURE.md) - Bonus feature documentation
 
 ### Guides (in `docs/`)
@@ -378,7 +378,7 @@ This is a hackathon project for educational purposes.
 For questions or issues:
 1. Check phase-specific READMEs
 2. Review documentation in `docs/`
-3. Consult `constitution.md` for principles
+3. Consult `.specify/memory/constitution.md` for principles
 
 ---
 

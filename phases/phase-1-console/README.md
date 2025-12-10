@@ -298,7 +298,7 @@ c4097d9 - Phase I: Complete specifications and documentation
   - SUBMISSION_CHECKLIST.md - Final submission steps
 
 - **Bonus Feature**: `../../BONUS_FEATURE.md`
-- **Constitution**: `../../constitution.md`
+- **Constitution**: `../../.specify/memory/constitution.md`
 - **Skills**: `../../.claude/skills/crud-spec-generator.md`
 
 ---
