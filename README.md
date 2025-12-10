@@ -30,7 +30,7 @@ A comprehensive journey through modern software development, from console app to
 - **Bonus**: CRUD Spec Generator Agent Skill (+200 pts)
 - 61 automated tests (100% passing)
 
-**📁 Location**: [`phases/phase-1-console/`](phases/phase-1-console/)
+**📁 Location**: [`phase-1-console/`](phase-1-console/)
 
 ---
 
@@ -44,7 +44,7 @@ A comprehensive journey through modern software development, from console app to
 - Better Auth integration
 - RESTful API design
 
-**📁 Location**: [`phases/phase-2-web/`](phases/phase-2-web/)
+**📁 Location**: [`phase-2-web/`](phase-2-web/)
 
 ---
 
@@ -58,7 +58,7 @@ A comprehensive journey through modern software development, from console app to
 - **Bonus**: Multi-language support - Urdu (+100 pts)
 - **Bonus**: Voice commands (+200 pts)
 
-**📁 Location**: [`phases/phase-3-chatbot/`](phases/phase-3-chatbot/)
+**📁 Location**: [`phase-3-chatbot/`](phase-3-chatbot/)
 
 ---
 
@@ -72,7 +72,7 @@ A comprehensive journey through modern software development, from console app to
 - Service mesh and monitoring
 - **Bonus**: Cloud-Native Blueprints (+200 pts)
 
-**📁 Location**: [`phases/phase-4-kubernetes/`](phases/phase-4-kubernetes/)
+**📁 Location**: [`phase-4-kubernetes/`](phase-4-kubernetes/)
 
 ---
 
@@ -86,7 +86,7 @@ A comprehensive journey through modern software development, from console app to
 - Production monitoring and CI/CD
 - **Bonus**: Cloud-Native Blueprints (+200 pts)
 
-**📁 Location**: [`phases/phase-5-cloud/`](phases/phase-5-cloud/)
+**📁 Location**: [`phase-5-cloud/`](phase-5-cloud/)
 
 ---
 
@@ -122,35 +122,34 @@ hackathon-2/
 │   ├── templates/                 # Spec templates
 │   └── scripts/                   # Automation scripts
 │
-├── phases/                        # All phase implementations
-│   ├── phase-1-console/          # ✅ Phase I: Console App
-│   │   ├── README.md
-│   │   ├── pyproject.toml
-│   │   ├── src/                  # Implementation (643 lines)
-│   │   ├── tests/                # Pytest tests (61 tests)
-│   │   └── specs/                # Specifications (67 AC)
-│   │
-│   ├── phase-2-web/              # 🔜 Phase II: Web App
-│   │   ├── README.md
-│   │   ├── frontend/             # Next.js
-│   │   ├── backend/              # FastAPI
-│   │   └── specs/
-│   │
-│   ├── phase-3-chatbot/          # 🔜 Phase III: AI Chatbot
-│   │   ├── README.md
-│   │   ├── src/
-│   │   └── specs/
-│   │
-│   ├── phase-4-kubernetes/       # 🔜 Phase IV: K8s
-│   │   ├── README.md
-│   │   ├── manifests/
-│   │   ├── helm/
-│   │   └── specs/
-│   │
-│   └── phase-5-cloud/            # 🔜 Phase V: Cloud
-│       ├── README.md
-│       ├── infrastructure/
-│       └── specs/
+├── phase-1-console/              # ✅ Phase I: Console App
+│   ├── README.md
+│   ├── pyproject.toml
+│   ├── src/                      # Implementation (643 lines)
+│   ├── tests/                    # Pytest tests (61 tests)
+│   └── specs/                    # Specifications (67 AC)
+│
+├── phase-2-web/                  # 🔜 Phase II: Web App
+│   ├── README.md
+│   ├── frontend/                 # Next.js
+│   ├── backend/                  # FastAPI
+│   └── specs/
+│
+├── phase-3-chatbot/              # 🔜 Phase III: AI Chatbot
+│   ├── README.md
+│   ├── src/
+│   └── specs/
+│
+├── phase-4-kubernetes/           # 🔜 Phase IV: K8s
+│   ├── README.md
+│   ├── manifests/
+│   ├── helm/
+│   └── specs/
+│
+├── phase-5-cloud/                # 🔜 Phase V: Cloud
+│   ├── README.md
+│   ├── infrastructure/
+│   └── specs/
 │
 ├── docs/                          # Documentation & guides
 │   ├── CLAUDE.md                 # Spec-driven development guide
@@ -172,7 +171,7 @@ hackathon-2/
 
 ```bash
 # Navigate to Phase I
-cd phases/phase-1-console
+cd phase-1-console
 
 # Run application
 uv run python src/main.py
@@ -184,10 +183,10 @@ uv run pytest tests/ -v
 ### Future Phases
 
 See individual phase READMEs for setup instructions:
-- [Phase II Web App](phases/phase-2-web/README.md)
-- [Phase III Chatbot](phases/phase-3-chatbot/README.md)
-- [Phase IV Kubernetes](phases/phase-4-kubernetes/README.md)
-- [Phase V Cloud](phases/phase-5-cloud/README.md)
+- [Phase II Web App](phase-2-web/README.md)
+- [Phase III Chatbot](phase-3-chatbot/README.md)
+- [Phase IV Kubernetes](phase-4-kubernetes/README.md)
+- [Phase V Cloud](phase-5-cloud/README.md)
 
 ---
 
@@ -275,11 +274,11 @@ Planned for Phase III:
 
 ### Phase-Specific READMEs
 Each phase has its own detailed README:
-- [Phase I README](phases/phase-1-console/README.md) ✅
-- [Phase II README](phases/phase-2-web/README.md) 🔜
-- [Phase III README](phases/phase-3-chatbot/README.md) 🔜
-- [Phase IV README](phases/phase-4-kubernetes/README.md) 🔜
-- [Phase V README](phases/phase-5-cloud/README.md) 🔜
+- [Phase I README](phase-1-console/README.md) ✅
+- [Phase II README](phase-2-web/README.md) 🔜
+- [Phase III README](phase-3-chatbot/README.md) 🔜
+- [Phase IV README](phase-4-kubernetes/README.md) 🔜
+- [Phase V README](phase-5-cloud/README.md) 🔜
 
 ---
 

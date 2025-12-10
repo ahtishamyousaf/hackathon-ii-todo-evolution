@@ -24,7 +24,7 @@ A Python console application for managing todo tasks with full CRUD operations. 
 - Generates complete CRUD specifications for any entity
 - 95% time savings (7 hours → 30 minutes)
 - Demo: Generated Note entity specifications
-- Location: `../../.claude/skills/crud-spec-generator.md`
+- Location: `../.claude/skills/crud-spec-generator.md`
 
 ---
 
@@ -290,16 +290,16 @@ c4097d9 - Phase I: Complete specifications and documentation
 
 ## Resources
 
-- **Documentation**: `../../docs/`
+- **Documentation**: `../docs/`
   - CLAUDE.md - Spec-driven development guide
   - TESTING_CHECKLIST.md - Manual testing scenarios
   - DEMO_SCRIPT.md - Video recording guide
   - GITHUB_SETUP.md - Repository setup
   - SUBMISSION_CHECKLIST.md - Final submission steps
 
-- **Bonus Feature**: `../../BONUS_FEATURE.md`
-- **Constitution**: `../../.specify/memory/constitution.md`
-- **Skills**: `../../.claude/skills/crud-spec-generator.md`
+- **Bonus Feature**: `../BONUS_FEATURE.md`
+- **Constitution**: `../.specify/memory/constitution.md`
+- **Skills**: `../.claude/skills/crud-spec-generator.md`
 
 ---
 
