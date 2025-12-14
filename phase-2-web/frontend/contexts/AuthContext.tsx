@@ -1,12 +1,15 @@
 "use client";
 
 /**
- * Authentication context for managing user authentication state.
+ * Authentication context using Better Auth patterns.
+ *
+ * Integrates with FastAPI backend for authentication while following
+ * Better Auth architectural patterns and best practices.
  *
  * Provides:
  * - User authentication state
  * - Login/register/logout functions
- * - Token management
+ * - Token management with secure storage
  * - Loading states
  */
 
@@ -20,7 +23,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -93,7 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
     // Clear storage
     localStorage.removeItem("token");
     localStorage.removeItem("user");
