@@ -1,26 +1,35 @@
 "use client";
 
 /**
- * Authentication context using Better Auth patterns.
+ * Authentication context powered by Better Auth.
  *
- * Integrates with FastAPI backend for authentication while following
- * Better Auth architectural patterns and best practices.
+ * Better Auth handles JWT token creation and session management.
+ * Tokens are sent to FastAPI backend for verification.
+ *
+ * Flow:
+ * 1. User logs in via Better Auth
+ * 2. Better Auth issues JWT token
+ * 3. Token stored in session/cookies
+ * 4. Frontend sends JWT to FastAPI with each API request
+ * 5. FastAPI verifies JWT and returns user-specific data
  *
  * Provides:
- * - User authentication state
- * - Login/register/logout functions
- * - Token management with secure storage
+ * - User authentication state from Better Auth session
+ * - Login/register/logout via Better Auth client
+ * - JWT token for FastAPI API calls
  * - Loading states
  */
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { User, AuthResponse } from "@/types/user";
+import { createContext, useContext, ReactNode, useEffect } from "react";
+import { authClient } from "@/lib/auth";
+import { User } from "@/types/user";
 import { api } from "@/lib/api";
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  token: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -29,89 +38,61 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Use Better Auth session hook
+  const { data: session, isPending, error } = authClient.useSession();
 
-  // Initialize auth state from localStorage on mount
+  // Extract JWT token from Better Auth session
+  const token = session?.session?.token || null;
+
+  // Update API client with JWT token whenever it changes
   useEffect(() => {
-    const initAuth = () => {
-      try {
-        const token = localStorage.getItem("token");
-        const userData = localStorage.getItem("user");
-
-        if (token && userData) {
-          api.setToken(token);
-          setUser(JSON.parse(userData));
-        }
-      } catch (error) {
-        console.error("Failed to initialize auth:", error);
-        // Clear invalid data
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    initAuth();
-  }, []);
+    if (token) {
+      api.setToken(token);
+    } else {
+      api.setToken(null);
+    }
+  }, [token]);
 
   const login = async (email: string, password: string) => {
-    try {
-      const response = await api.post<AuthResponse>("/api/auth/login", {
-        email,
-        password,
-      });
+    const result = await authClient.signIn.email({
+      email,
+      password,
+    });
 
-      // Store token and user data
-      localStorage.setItem("token", response.access_token);
-      localStorage.setItem("user", JSON.stringify(response.user));
-
-      // Update API client and state
-      api.setToken(response.access_token);
-      setUser(response.user);
-    } catch (error) {
-      console.error("Login failed:", error);
-      throw error;
+    if (result.error) {
+      throw new Error(result.error.message || "Login failed");
     }
   };
 
   const register = async (email: string, password: string) => {
-    try {
-      const response = await api.post<AuthResponse>("/api/auth/register", {
-        email,
-        password,
-      });
+    const result = await authClient.signUp.email({
+      email,
+      password,
+    });
 
-      // Store token and user data
-      localStorage.setItem("token", response.access_token);
-      localStorage.setItem("user", JSON.stringify(response.user));
-
-      // Update API client and state
-      api.setToken(response.access_token);
-      setUser(response.user);
-    } catch (error) {
-      console.error("Registration failed:", error);
-      throw error;
+    if (result.error) {
+      throw new Error(result.error.message || "Registration failed");
     }
   };
 
   const logout = async () => {
-    // Clear storage
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-
-    // Clear API token
-    api.setToken(null);
-
-    // Clear user state
-    setUser(null);
+    await authClient.signOut();
   };
+
+  // Map Better Auth user to our User type
+  const user: User | null = session?.user
+    ? {
+        id: parseInt(session.user.id),
+        email: session.user.email,
+        created_at: session.user.createdAt?.toISOString() || new Date().toISOString(),
+      }
+    : null;
 
   const value: AuthContextType = {
     user,
-    isAuthenticated: !!user,
-    isLoading,
+    isAuthenticated: !!session?.user,
+    isLoading: isPending,
+    token,
     login,
     register,
     logout,
@@ -121,12 +102,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 /**
- * Hook to access authentication context.
+ * Hook to access Better Auth authentication context.
  *
  * Must be used within AuthProvider.
  *
  * @example
- * const { user, login, logout } = useAuth();
+ * const { user, token, login, logout } = useAuth();
  */
 export function useAuth() {
   const context = useContext(AuthContext);
