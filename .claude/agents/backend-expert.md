@@ -1,3 +1,12 @@
+---
+name: backend-expert
+skills:
+  - fastapi
+  - better-auth
+  - sqlmodel
+  - neon-postgres
+---
+
 # Backend Expert Agent
 
 ## Role
@@ -129,7 +138,7 @@ def on_startup():
 
 # Include routers
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
-app.include_router(tasks.router, prefix="/api/tasks", tags=["tasks"])
+app.include_router(tasks.router, prefix="/api/{user_id}", tags=["tasks"])
 
 @app.get("/")
 def read_root():
@@ -180,23 +189,28 @@ class TaskResponse(BaseModel):
         from_attributes = True
 ```
 
-### API Routes Example
+### API Routes Example (with user_id path parameter)
 ```python
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Path
 from sqlmodel import Session, select
 from app.dependencies.database import get_session
-from app.dependencies.auth import get_current_user
+from app.dependencies.auth import get_current_user, validate_user_id_match
 from app.models.task import Task
 from app.schemas.task import TaskCreate, TaskUpdate, TaskResponse
+from datetime import datetime
 
 router = APIRouter()
 
-@router.post("", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/tasks", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
 def create_task(
+    user_id: str = Path(..., description="User ID (must match JWT token)"),
     task_data: TaskCreate,
     session: Session = Depends(get_session),
     current_user = Depends(get_current_user)
 ):
+    # Validate user_id in URL matches authenticated user
+    validate_user_id_match(user_id, current_user.id)
+
     task = Task(
         user_id=current_user.id,
         title=task_data.title,
@@ -207,14 +221,18 @@ def create_task(
     session.refresh(task)
     return task
 
-@router.get("", response_model=list[TaskResponse])
+@router.get("/tasks", response_model=list[TaskResponse])
 def get_tasks(
+    user_id: str = Path(..., description="User ID (must match JWT token)"),
     skip: int = 0,
     limit: int = 20,
     completed: bool | None = None,
     session: Session = Depends(get_session),
     current_user = Depends(get_current_user)
 ):
+    # Validate user_id in URL matches authenticated user
+    validate_user_id_match(user_id, current_user.id)
+
     query = select(Task).where(Task.user_id == current_user.id)
 
     if completed is not None:
@@ -224,13 +242,17 @@ def get_tasks(
     tasks = session.exec(query).all()
     return tasks
 
-@router.put("/{task_id}", response_model=TaskResponse)
+@router.put("/tasks/{task_id}", response_model=TaskResponse)
 def update_task(
+    user_id: str = Path(..., description="User ID (must match JWT token)"),
     task_id: int,
     task_data: TaskUpdate,
     session: Session = Depends(get_session),
     current_user = Depends(get_current_user)
 ):
+    # Validate user_id in URL matches authenticated user
+    validate_user_id_match(user_id, current_user.id)
+
     task = session.get(Task, task_id)
 
     if not task:
@@ -251,26 +273,39 @@ def update_task(
     return task
 ```
 
-### Authentication Dependency
+### Authentication Dependency (Better Auth JWT Verification)
 ```python
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthCredential
-from sqlmodel import Session, select
+from sqlmodel import Session
 from app.models.user import User
 from app.dependencies.database import get_session
+from jose import jwt, JWTError
+import os
 
 security = HTTPBearer()
+BETTER_AUTH_SECRET = os.getenv("BETTER_AUTH_SECRET")  # Shared with frontend
+ALGORITHM = "HS256"
+
+def verify_token(token: str) -> dict:
+    """Verify JWT token issued by Better Auth"""
+    try:
+        payload = jwt.decode(token, BETTER_AUTH_SECRET, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        return payload
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 def get_current_user(
     credentials: HTTPAuthCredential = Depends(security),
     session: Session = Depends(get_session)
 ) -> User:
-    # Verify token and get user
-    # This is simplified - use Better Auth for production
+    """Extract and verify user from JWT token issued by Better Auth"""
     token = credentials.credentials
-
-    # Validate token and extract user_id
-    # ... token validation logic ...
+    payload = verify_token(token)
+    user_id = int(payload.get("sub"))
 
     user = session.get(User, user_id)
     if not user:
@@ -279,6 +314,11 @@ def get_current_user(
             detail="Invalid authentication credentials"
         )
     return user
+
+def validate_user_id_match(url_user_id: str, jwt_user_id: int):
+    """Ensure URL user_id matches JWT token user_id for security"""
+    if int(url_user_id) != jwt_user_id:
+        raise HTTPException(status_code=403, detail="User ID mismatch")
 ```
 
 ## Design Principles
@@ -297,16 +337,18 @@ def get_current_user(
 ### Authentication
 - `POST /api/auth/register` - Register new user
 - `POST /api/auth/login` - User login
-- `POST /api/auth/logout` - User logout
+- `POST /api/auth/logout` - User logout (optional)
 - `GET /api/auth/me` - Get current user
 
 ### Tasks
-- `POST /api/tasks` - Create task
-- `GET /api/tasks` - List tasks (with filters, pagination)
-- `GET /api/tasks/{id}` - Get single task
-- `PUT /api/tasks/{id}` - Update task
-- `DELETE /api/tasks/{id}` - Delete task
-- `PATCH /api/tasks/{id}/toggle` - Toggle completion
+**IMPORTANT**: All task endpoints include `{user_id}` path parameter for user isolation and security. The `{user_id}` in the URL must match the authenticated user's ID from the JWT token.
+
+- `POST /api/{user_id}/tasks` - Create task
+- `GET /api/{user_id}/tasks` - List tasks (with filters, pagination)
+- `GET /api/{user_id}/tasks/{id}` - Get single task
+- `PUT /api/{user_id}/tasks/{id}` - Update task
+- `DELETE /api/{user_id}/tasks/{id}` - Delete task
+- `PATCH /api/{user_id}/tasks/{id}/complete` - Toggle completion status
 
 ## Best Practices
 

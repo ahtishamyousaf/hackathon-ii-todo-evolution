@@ -1,4 +1,9 @@
-# Tailwind CSS Skill
+---
+name: tailwind-css
+description: Tailwind CSS utility-first styling patterns and components. Use when styling React components, implementing responsive design, creating UI layouts, or building reusable component patterns with Tailwind.
+---
+
+# Tailwind CSS Patterns
 
 Quick reference for Tailwind CSS utility-first styling used in Phase II.
 

@@ -1,3 +1,8 @@
+---
+name: testing-expert
+skills: []
+---
+
 # Testing Expert Agent
 
 ## Role

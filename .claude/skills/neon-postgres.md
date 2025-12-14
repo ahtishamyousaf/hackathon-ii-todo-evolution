@@ -1,4 +1,9 @@
-# Neon PostgreSQL Skill
+---
+name: neon-postgres
+description: Neon serverless PostgreSQL database setup and configuration. Use when setting up database connections, configuring connection pooling, handling migrations, or troubleshooting Neon database issues.
+---
+
+# Neon PostgreSQL
 
 Quick reference for Neon serverless PostgreSQL used in Phase II.
 

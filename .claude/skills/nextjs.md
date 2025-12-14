@@ -1,6 +1,11 @@
-# Next.js 14 Skill
+---
+name: nextjs
+description: Next.js 16+ App Router patterns for frontend development. Use when building Next.js pages, implementing client/server components, routing, data fetching, or setting up Next.js project structure.
+---
 
-Quick reference for Next.js 14 App Router patterns used in Phase II.
+# Next.js 16+ Patterns
+
+Quick reference for Next.js 16+ App Router patterns used in Phase II.
 
 ## Project Structure
 

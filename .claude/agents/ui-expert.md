@@ -1,3 +1,10 @@
+---
+name: ui-expert
+skills:
+  - tailwind-css
+  - nextjs
+---
+
 # UI/UX Expert Agent
 
 ## Role

@@ -1,4 +1,9 @@
-# SQLModel Skill
+---
+name: sqlmodel
+description: SQLModel ORM for database models and queries. Use when defining database models, implementing CRUD operations, setting up relationships, or writing database queries with SQLModel.
+---
+
+# SQLModel ORM
 
 Quick reference for SQLModel (Pydantic + SQLAlchemy) used in Phase II.
 

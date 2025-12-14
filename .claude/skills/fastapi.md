@@ -1,4 +1,9 @@
-# FastAPI Skill
+---
+name: fastapi
+description: FastAPI backend development patterns and best practices. Use when building REST APIs, implementing endpoints, handling requests/responses, or setting up FastAPI backend infrastructure.
+---
+
+# FastAPI Patterns
 
 Quick reference for FastAPI patterns and best practices used in Phase II.
 

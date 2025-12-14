@@ -1,3 +1,10 @@
+---
+name: database-expert
+skills:
+  - sqlmodel
+  - neon-postgres
+---
+
 # Database Expert Agent
 
 ## Role

@@ -120,3 +120,26 @@ credentials.json
 # Uncomment if needed:
 # data/*
 # !data/.gitkeep
+# Dependencies
+node_modules/
+.venv/
+__pycache__/
+
+# Environment files
+.env
+.env.local
+
+# Build outputs
+.next/
+dist/
+build/
+
+# Testing
+coverage/
+
+# IDE
+.vscode/
+.idea/
+
+# Node
+node_modules/

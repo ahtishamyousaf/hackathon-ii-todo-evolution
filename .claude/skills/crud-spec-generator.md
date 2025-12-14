@@ -1,4 +1,12 @@
-# CRUD Spec Generator Skill
+---
+name: crud-spec-generator
+description: Generate complete CRUD specifications for any entity across all phases. Use when creating specifications for new entities (Contact, Note, Event, etc.) or when adding CRUD features to any phase (console, web, chatbot, cloud).
+skill_type: Reusable Intelligence
+bonus_points: 200
+phases: [I, II, III, IV, V]
+---
+
+# CRUD Spec Generator
 
 **Skill Type**: Reusable Intelligence - Agent Skill
 **Purpose**: Generate complete CRUD specifications for any entity

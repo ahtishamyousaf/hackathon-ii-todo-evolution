@@ -1,20 +1,40 @@
-# Better Auth Skill
+---
+name: better-auth
+description: Better Auth implementation guide for Next.js + FastAPI authentication. Use when implementing user authentication, JWT token handling, or setting up auth middleware in Phase II web applications.
+---
+
+# Better Auth Integration
 
 Quick reference for Better Auth authentication library used in Phase II.
 
 ## What is Better Auth?
 
-Better Auth is a modern authentication library for TypeScript/JavaScript applications with built-in session management, password hashing, and security features.
+Better Auth is a modern TypeScript authentication library for Next.js applications with built-in session management, JWT token generation, and security features.
+
+## Phase II Integration Pattern
+
+**Frontend (Next.js)**:
+- Uses Better Auth TypeScript library for user authentication UI
+- Handles user registration and login forms
+- Issues JWT tokens upon successful authentication
+- Manages token storage (localStorage)
+
+**Backend (FastAPI)**:
+- Verifies JWT tokens issued by Better Auth
+- Uses shared `BETTER_AUTH_SECRET` environment variable
+- Validates user_id in URL path matches JWT token user_id
+- Uses python-jose for JWT verification
+
+**Shared Secret**: Both frontend and backend use the same `BETTER_AUTH_SECRET` for JWT signing/verification.
 
 ## Installation
 
 ```bash
-# Frontend (Next.js)
+# Frontend (Next.js 16+)
 npm install better-auth
 
-# Backend (Python) - Use alternative
-# Better Auth is TypeScript-focused
-# For Python backend, use: passlib + JWT
+# Backend (Python/FastAPI)
+pip install python-jose[cryptography] passlib[bcrypt] python-multipart
 ```
 
 ## Python Backend Alternative (Recommended)
@@ -40,33 +60,31 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 ```
 
-### JWT Tokens
+### JWT Token Verification (Better Auth Integration)
 ```python
-# app/auth/jwt.py
-from datetime import datetime, timedelta
+# app/utils/jwt.py
 from jose import JWTError, jwt
-from typing import Optional
+from fastapi import HTTPException
+import os
 
-SECRET_KEY = "your-secret-key-here"  # Use env variable
+BETTER_AUTH_SECRET = os.getenv("BETTER_AUTH_SECRET")  # Shared with frontend
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-def verify_token(token: str) -> Optional[dict]:
+def verify_token(token: str) -> dict:
+    """Verify JWT token issued by Better Auth"""
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, BETTER_AUTH_SECRET, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
         return payload
     except JWTError:
-        return None
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+def validate_user_id_match(url_user_id: str, jwt_user_id: int):
+    """Ensure URL user_id matches JWT token user_id"""
+    if int(url_user_id) != jwt_user_id:
+        raise HTTPException(status_code=403, detail="User ID mismatch")
 ```
 
 ### Auth Routes
