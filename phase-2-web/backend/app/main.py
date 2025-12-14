@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import create_db_and_tables
+from app.routers import auth_router
 
 # Create FastAPI application
 app = FastAPI(
@@ -83,8 +84,5 @@ def on_shutdown():
     print("Shutting down application...")
 
 
-# Routers will be included here as they're implemented
-# Example:
-# from app.routers import auth, tasks
-# app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
-# app.include_router(tasks.router, prefix="/api/{user_id}", tags=["tasks"])
+# Include routers
+app.include_router(auth_router)
