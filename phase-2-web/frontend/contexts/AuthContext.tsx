@@ -21,9 +21,15 @@
  */
 
 import { createContext, useContext, ReactNode, useEffect } from "react";
-import { authClient } from "@/lib/auth";
-import { User } from "@/types/user";
+import { authClient } from "@/lib/auth-client";
 import { api } from "@/lib/api";
+
+interface User {
+  id: number;
+  email: string;
+  name?: string;
+  created_at: string;
+}
 
 interface AuthContextType {
   user: User | null;
@@ -31,7 +37,7 @@ interface AuthContextType {
   isLoading: boolean;
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, name?: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -41,15 +47,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Use Better Auth session hook
   const { data: session, isPending, error } = authClient.useSession();
 
-  // Extract JWT token from Better Auth session
+  // Extract session token from Better Auth
+  // Better Auth stores JWT tokens in session
   const token = session?.session?.token || null;
 
-  // Update API client with JWT token whenever it changes
+  // Update API client with Better Auth token whenever it changes
   useEffect(() => {
     if (token) {
       api.setToken(token);
+      console.log("[Auth] Token updated from Better Auth session");
     } else {
       api.setToken(null);
+      console.log("[Auth] No token available");
     }
   }, [token]);
 
@@ -64,10 +73,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const register = async (email: string, password: string) => {
+  const register = async (email: string, password: string, name?: string) => {
     const result = await authClient.signUp.email({
       email,
       password,
+      name: name || email.split('@')[0], // Default to email username if no name provided
     });
 
     if (result.error) {
@@ -84,6 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     ? {
         id: parseInt(session.user.id),
         email: session.user.email,
+        name: session.user.name,
         created_at: session.user.createdAt?.toISOString() || new Date().toISOString(),
       }
     : null;

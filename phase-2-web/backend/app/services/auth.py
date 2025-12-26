@@ -126,7 +126,7 @@ def create_access_token(user: User) -> str:
     # Encode and return token
     token = jwt.encode(
         payload,
-        settings.better_auth_secret,
+        settings.secret_key,
         algorithm=settings.algorithm
     )
 

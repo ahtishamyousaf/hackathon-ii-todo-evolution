@@ -9,16 +9,10 @@ This module provides:
 
 from sqlmodel import create_engine, Session, SQLModel
 from sqlalchemy.pool import NullPool
-import os
+from app.config import settings
 
 # Database configuration
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-if not DATABASE_URL:
-    raise ValueError(
-        "DATABASE_URL environment variable is not set. "
-        "Please set it in your .env file."
-    )
+DATABASE_URL = settings.database_url
 
 # Create engine with connection pooling for Neon PostgreSQL
 # Neon serverless postgres requires specific pool settings
@@ -64,7 +58,7 @@ def drop_db_and_tables():
     """
     Drop all database tables.
 
-      WARNING: This will delete all data!
+    WARNING: This will delete all data!
     Only use for testing or development reset.
     """
     SQLModel.metadata.drop_all(engine)

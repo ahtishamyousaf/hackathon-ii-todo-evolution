@@ -1,36 +1,41 @@
 /**
- * Better Auth client configuration for Next.js frontend.
- *
- * Better Auth issues JWT tokens that are verified by the FastAPI backend.
- * Both services share the same BETTER_AUTH_SECRET for token signing/verification.
+ * Better Auth configuration following official docs.
  */
 
-import { createAuthClient } from "better-auth/react";
+import { betterAuth } from "better-auth";
+import { Pool } from "pg";
 
-/**
- * Better Auth client instance.
- *
- * This connects to Next.js API routes (/app/api/auth/[...all]/route.ts)
- * which handle authentication and issue JWT tokens.
- */
-export const authClient = createAuthClient({
-  baseURL: typeof window !== "undefined" ? window.location.origin : "http://localhost:3000",
-  basePath: "/api/auth",
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL environment variable is required");
+}
+
+if (!process.env.BETTER_AUTH_SECRET) {
+  throw new Error("BETTER_AUTH_SECRET environment variable is required");
+}
+
+export const auth = betterAuth({
+  database: new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+  }),
+  secret: process.env.BETTER_AUTH_SECRET,
+  emailAndPassword: {
+    enabled: true,
+  },
+  session: {
+    // Use JWT tokens instead of session tokens
+    expiresIn: 60 * 60 * 24, // 24 hours
+    updateAge: 60 * 60, // 1 hour
+    cookieCache: {
+      enabled: true,
+      maxAge: 60 * 60 * 24 // 24 hours
+    }
+  },
+  // Enable JWT for API authentication
+  advanced: {
+    generateId: () => crypto.randomUUID(),
+    useSecureCookies: process.env.NODE_ENV === "production",
+  }
 });
 
-/**
- * Type for Better Auth session with JWT token.
- */
-export interface AuthSession {
-  user: {
-    id: string;
-    email: string;
-    emailVerified: boolean;
-    createdAt: Date;
-    updatedAt: Date;
-  };
-  session: {
-    token: string;
-    expiresAt: Date;
-  };
-}
+export type Auth = typeof auth;

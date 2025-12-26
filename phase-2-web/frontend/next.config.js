@@ -9,10 +9,13 @@ const nextConfig = {
   },
 
   // Rewrites for API proxy (optional - for development)
+  // Note: Excludes /api/auth/* which is handled by Better Auth Next.js routes
   async rewrites() {
     return [
       {
-        source: '/api/:path*',
+        // Proxy task and user API requests to FastAPI backend
+        // But exclude /api/auth/* which is handled by Better Auth
+        source: '/api/:path((?!auth).*)*',
         destination: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/:path*`,
       },
     ];

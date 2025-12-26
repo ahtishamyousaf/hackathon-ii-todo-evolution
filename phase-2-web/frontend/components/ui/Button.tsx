@@ -12,31 +12,32 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={cn(
-          // Base styles
-          "inline-flex items-center justify-center rounded-lg font-medium transition-colors",
-          "focus:outline-none focus:ring-2 focus:ring-offset-2",
+          // Base styles - smoother, more rounded
+          "inline-flex items-center justify-center rounded-xl font-semibold transition-all duration-200",
+          "focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-sm",
           "disabled:opacity-50 disabled:cursor-not-allowed",
-          
-          // Variants
+
+          // Variants with softer, more modern colors
           {
-            "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500":
+            "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md active:scale-95 focus:ring-blue-500":
               variant === "primary",
-            "bg-gray-600 text-white hover:bg-gray-700 focus:ring-gray-500":
+            "bg-gray-600 text-white hover:bg-gray-700 hover:shadow-md active:scale-95 focus:ring-gray-500":
               variant === "secondary",
-            "border border-gray-300 bg-white hover:bg-gray-50 focus:ring-blue-500":
+            "border-2 border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300 focus:ring-blue-500":
               variant === "outline",
-            "hover:bg-gray-100 focus:ring-gray-500": variant === "ghost",
-            "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500":
+            "text-gray-700 hover:bg-gray-100 active:bg-gray-200 focus:ring-gray-500":
+              variant === "ghost",
+            "bg-red-600 text-white hover:bg-red-700 hover:shadow-md active:scale-95 focus:ring-red-500":
               variant === "danger",
           },
-          
-          // Sizes
+
+          // Sizes with better spacing
           {
-            "px-3 py-1.5 text-sm": size === "sm",
-            "px-4 py-2 text-base": size === "md",
-            "px-6 py-3 text-lg": size === "lg",
+            "px-3 py-2 text-sm": size === "sm",
+            "px-5 py-2.5 text-base": size === "md",
+            "px-7 py-3.5 text-lg": size === "lg",
           },
-          
+
           className
         )}
         {...props}

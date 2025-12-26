@@ -1,0 +1,223 @@
+{
+  "version": "1.0.0",
+  "feature": "002-organize-folder-structure",
+  "created": "2025-12-23",
+  "purpose": "Complete manifest of all file operations for folder reorganization",
+  "operations": [
+    {
+      "id": "OP-001",
+      "type": "create_directory",
+      "path": "phase-2-web/backend/app/migrations",
+      "rationale": "FR-001: Migration files must be organized in dedicated directory"
+    },
+    {
+      "id": "OP-002",
+      "type": "create_directory",
+      "path": "phase-2-web/docs",
+      "rationale": "FR-003: Documentation must be centralized"
+    },
+    {
+      "id": "OP-003",
+      "type": "git_mv",
+      "source": "phase-2-web/backend/add_attachments_migration.py",
+      "destination": "phase-2-web/backend/app/migrations/add_attachments_migration.py",
+      "rationale": "FR-001: Organize migration files",
+      "requires_import_updates": false
+    },
+    {
+      "id": "OP-004",
+      "type": "git_mv",
+      "source": "phase-2-web/backend/add_categories_migration.py",
+      "destination": "phase-2-web/backend/app/migrations/add_categories_migration.py",
+      "rationale": "FR-001: Organize migration files",
+      "requires_import_updates": false
+    },
+    {
+      "id": "OP-005",
+      "type": "git_mv",
+      "source": "phase-2-web/backend/add_comments_migration.py",
+      "destination": "phase-2-web/backend/app/migrations/add_comments_migration.py",
+      "rationale": "FR-001: Organize migration files",
+      "requires_import_updates": false
+    },
+    {
+      "id": "OP-006",
+      "type": "git_mv",
+      "source": "phase-2-web/backend/add_due_date_migration.py",
+      "destination": "phase-2-web/backend/app/migrations/add_due_date_migration.py",
+      "rationale": "FR-001: Organize migration files",
+      "requires_import_updates": false
+    },
+    {
+      "id": "OP-007",
+      "type": "git_mv",
+      "source": "phase-2-web/backend/add_oauth_migration.py",
+      "destination": "phase-2-web/backend/app/migrations/add_oauth_migration.py",
+      "rationale": "FR-001: Organize migration files",
+      "requires_import_updates": false
+    },
+    {
+      "id": "OP-008",
+      "type": "git_mv",
+      "source": "phase-2-web/backend/add_password_reset_migration.py",
+      "destination": "phase-2-web/backend/app/migrations/add_password_reset_migration.py",
+      "rationale": "FR-001: Organize migration files",
+      "requires_import_updates": false
+    },
+    {
+      "id": "OP-009",
+      "type": "git_mv",
+      "source": "phase-2-web/backend/add_priority_column.sql",
+      "destination": "phase-2-web/backend/app/migrations/add_priority_column.sql",
+      "rationale": "FR-001: Organize migration files",
+      "requires_import_updates": false
+    },
+    {
+      "id": "OP-010",
+      "type": "git_mv",
+      "source": "phase-2-web/backend/add_priority_migration.py",
+      "destination": "phase-2-web/backend/app/migrations/add_priority_migration.py",
+      "rationale": "FR-001: Organize migration files",
+      "requires_import_updates": false
+    },
+    {
+      "id": "OP-011",
+      "type": "git_mv",
+      "source": "phase-2-web/backend/add_recurring_tasks_migration.py",
+      "destination": "phase-2-web/backend/app/migrations/add_recurring_tasks_migration.py",
+      "rationale": "FR-001: Organize migration files",
+      "requires_import_updates": false
+    },
+    {
+      "id": "OP-012",
+      "type": "git_mv",
+      "source": "phase-2-web/backend/add_subtasks_migration.py",
+      "destination": "phase-2-web/backend/app/migrations/add_subtasks_migration.py",
+      "rationale": "FR-001: Organize migration files",
+      "requires_import_updates": false
+    },
+    {
+      "id": "OP-013",
+      "type": "git_mv",
+      "source": "phase-2-web/frontend/BETTER_AUTH_SETUP.md",
+      "destination": "phase-2-web/docs/BETTER_AUTH_SETUP.md",
+      "rationale": "FR-003: Centralize documentation",
+      "requires_import_updates": false
+    },
+    {
+      "id": "OP-014",
+      "type": "git_mv",
+      "source": "phase-2-web/frontend/BETTER_AUTH_QUICK_REFERENCE.md",
+      "destination": "phase-2-web/docs/BETTER_AUTH_QUICK_REFERENCE.md",
+      "rationale": "FR-003: Centralize documentation",
+      "requires_import_updates": false
+    },
+    {
+      "id": "OP-015",
+      "type": "git_mv",
+      "source": "phase-2-web/frontend/app/forgot-password",
+      "destination": "phase-2-web/frontend/app/(auth)/forgot-password",
+      "rationale": "FR-002: Consolidate auth routes under (auth)/ route group",
+      "requires_import_updates": true,
+      "affected_files": [
+        "phase-2-web/frontend/app/(auth)/login/page.tsx",
+        "phase-2-web/frontend/components/*"
+      ],
+      "notes": "Verify no hardcoded /forgot-password paths in code"
+    },
+    {
+      "id": "OP-016",
+      "type": "git_mv",
+      "source": "phase-2-web/frontend/app/reset-password",
+      "destination": "phase-2-web/frontend/app/(auth)/reset-password",
+      "rationale": "FR-002: Consolidate auth routes under (auth)/ route group",
+      "requires_import_updates": true,
+      "affected_files": [
+        "phase-2-web/frontend/app/(auth)/forgot-password/page.tsx",
+        "phase-2-web/frontend/components/*"
+      ],
+      "notes": "Verify no hardcoded /reset-password paths in code"
+    },
+    {
+      "id": "OP-017",
+      "type": "git_mv",
+      "source": "phase-2-web/frontend/app/auth/callback",
+      "destination": "phase-2-web/frontend/app/(auth)/callback",
+      "rationale": "FR-002: Consolidate auth routes under (auth)/ route group",
+      "requires_import_updates": false,
+      "notes": "CRITICAL: OAuth callback URL changes from /auth/callback to /callback - verify Better Auth configuration"
+    },
+    {
+      "id": "OP-018",
+      "type": "remove_directory",
+      "path": "phase-2-web/frontend/app/auth",
+      "rationale": "FR-002: Remove duplicate auth directory structure",
+      "prerequisites": ["OP-017"],
+      "notes": "Only remove after callback is moved to (auth)/"
+    },
+    {
+      "id": "OP-019",
+      "type": "git_mv",
+      "source": "phase-2-web/frontend/components/TaskList.tsx",
+      "destination": "phase-2-web/frontend/components/TaskListOld.tsx",
+      "rationale": "FR-004: Clarify component naming - deprecate TaskList, keep TasksList",
+      "requires_import_updates": true,
+      "affected_files": [
+        "Search required: grep -r 'TaskList' phase-2-web/frontend/"
+      ],
+      "notes": "Add deprecation comment to file header"
+    },
+    {
+      "id": "OP-020",
+      "type": "update_file",
+      "path": ".gitignore",
+      "action": "append",
+      "content": [
+        "# Log files",
+        "*.log",
+        "backend.log",
+        "",
+        "# OS artifacts",
+        "*:Zone.Identifier",
+        ".DS_Store"
+      ],
+      "rationale": "FR-005: Exclude log files and OS artifacts from git tracking"
+    },
+    {
+      "id": "OP-021",
+      "type": "create_file",
+      "path": "phase-2-web/backend/app/migrations/README.md",
+      "rationale": "Document migration execution order and usage",
+      "content_template": "See research.md for README.md content"
+    },
+    {
+      "id": "OP-022",
+      "type": "git_mv",
+      "source": "Hackathon II - Todo Spec-Driven Development.md",
+      "destination": "docs/hackathon/Hackathon II - Todo Spec-Driven Development.md",
+      "rationale": "FR-007: Organize large untracked files at root",
+      "notes": "Create docs/hackathon/ directory first if needed",
+      "optional": true
+    }
+  ],
+  "summary": {
+    "total_operations": 22,
+    "mandatory_operations": 21,
+    "optional_operations": 1,
+    "directories_created": 2,
+    "files_moved": 18,
+    "files_updated": 1,
+    "files_created": 1,
+    "directories_removed": 1
+  },
+  "verification_checklist": [
+    "All migration files in backend/app/migrations/ (SC-001)",
+    "All auth pages under (auth)/ route group (SC-002)",
+    "All documentation in /docs/ (SC-003)",
+    ".gitignore excludes log files (SC-005)",
+    "Frontend build succeeds (SC-006)",
+    "No broken import statements",
+    "OAuth callback still works (/callback route)",
+    "Git history preserved for all moved files"
+  ]
+}

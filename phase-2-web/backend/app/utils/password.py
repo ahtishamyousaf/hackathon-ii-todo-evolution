@@ -1,15 +1,11 @@
 """
 Password hashing and verification utilities.
 
-Uses passlib with bcrypt for secure password hashing.
+Uses bcrypt for secure password hashing.
 Never stores plain-text passwords - always hash before storing.
 """
 
-from passlib.context import CryptContext
-
-# Create password hashing context with bcrypt
-# Bcrypt is a slow hashing algorithm designed for passwords
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+import bcrypt
 
 
 def hash_password(password: str) -> str:
@@ -33,7 +29,13 @@ def hash_password(password: str) -> str:
         - Hash is different each time even for same password
         - This is intentional and secure
     """
-    return pwd_context.hash(password)
+    # Convert password to bytes
+    password_bytes = password.encode('utf-8')
+    # Generate salt and hash password
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password_bytes, salt)
+    # Return as string
+    return hashed.decode('utf-8')
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -62,7 +64,11 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         - Returns False for invalid inputs (never raises exception)
     """
     try:
-        return pwd_context.verify(plain_password, hashed_password)
+        # Convert to bytes
+        password_bytes = plain_password.encode('utf-8')
+        hashed_bytes = hashed_password.encode('utf-8')
+        # Verify password
+        return bcrypt.checkpw(password_bytes, hashed_bytes)
     except Exception:
         # Return False for any verification errors
         # Don't expose error details to prevent information leakage
@@ -98,4 +104,6 @@ def needs_rehash(hashed_password: str) -> bool:
         This allows graceful migration to stronger hashing
         without forcing password resets.
     """
-    return pwd_context.needs_update(hashed_password)
+    # For now, always return False
+    # In the future, could check bcrypt cost factor
+    return False

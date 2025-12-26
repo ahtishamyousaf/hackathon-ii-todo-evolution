@@ -1,0 +1,294 @@
+openapi: 3.0.3
+info:
+  title: Task Categories API
+  description: API endpoints for managing task categories in the todo application
+  version: 1.0.0
+  contact:
+    name: Task Categories System
+    url: https://github.com/your-repo/hackathon-2
+
+servers:
+  - url: http://localhost:8000
+    description: Development server
+
+security:
+  - BearerAuth: []
+
+paths:
+  /api/categories:
+    get:
+      summary: List all categories
+      description: Retrieve all categories for the authenticated user
+      operationId: listCategories
+      tags:
+        - categories
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+              example:
+                - id: 1
+                  name: "Work"
+                  color: "#3B82F6"
+                  user_id: 42
+                  created_at: "2025-12-24T10:00:00Z"
+                  updated_at: "2025-12-24T10:00:00Z"
+                - id: 2
+                  name: "Personal"
+                  color: "#10B981"
+                  user_id: 42
+                  created_at: "2025-12-24T10:05:00Z"
+                  updated_at: "2025-12-24T10:05:00Z"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      summary: Create a new category
+      description: Create a new category for the authenticated user
+      operationId: createCategory
+      tags:
+        - categories
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryCreate'
+            example:
+              name: "Shopping"
+              color: "#F59E0B"
+      responses:
+        '201':
+          description: Category created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+              example:
+                id: 3
+                name: "Shopping"
+                color: "#F59E0B"
+                user_id: 42
+                created_at: "2025-12-24T10:10:00Z"
+                updated_at: "2025-12-24T10:10:00Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Category name already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Category name already exists"
+
+  /api/categories/{id}:
+    get:
+      summary: Get category by ID
+      description: Retrieve a specific category by its ID
+      operationId: getCategory
+      tags:
+        - categories
+      parameters:
+        - $ref: '#/components/parameters/CategoryId'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      summary: Update category
+      description: Update an existing category's name and/or color
+      operationId: updateCategory
+      tags:
+        - categories
+      parameters:
+        - $ref: '#/components/parameters/CategoryId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryUpdate'
+            example:
+              name: "Work Projects"
+              color: "#6366F1"
+      responses:
+        '200':
+          description: Category updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Category name already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Delete category
+      description: Delete a category and set category_id to null for all associated tasks
+      operationId: deleteCategory
+      tags:
+        - categories
+      parameters:
+        - $ref: '#/components/parameters/CategoryId'
+      responses:
+        '204':
+          description: Category deleted successfully (tasks preserved as uncategorized)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token from Better Auth authentication
+
+  parameters:
+    CategoryId:
+      name: id
+      in: path
+      required: true
+      description: Category ID
+      schema:
+        type: integer
+        minimum: 1
+      example: 1
+
+  schemas:
+    Category:
+      type: object
+      required:
+        - id
+        - name
+        - color
+        - user_id
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: integer
+          description: Unique category identifier
+          example: 1
+        name:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: Category name (unique per user)
+          example: "Work"
+        color:
+          type: string
+          pattern: '^#[0-9A-Fa-f]{6}$'
+          description: Hex color code
+          example: "#3B82F6"
+        user_id:
+          type: integer
+          description: ID of the user who owns this category
+          example: 42
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when category was created
+          example: "2025-12-24T10:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp when category was last updated
+          example: "2025-12-24T10:00:00Z"
+
+    CategoryCreate:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: Category name (will be unique per user)
+          example: "Shopping"
+        color:
+          type: string
+          pattern: '^#[0-9A-Fa-f]{6}$'
+          description: Hex color code (defaults to #9CA3AF if not provided)
+          example: "#F59E0B"
+
+    CategoryUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: Updated category name (must remain unique per user)
+          example: "Work Projects"
+        color:
+          type: string
+          pattern: '^#[0-9A-Fa-f]{6}$'
+          description: Updated hex color code
+          example: "#6366F1"
+
+    Error:
+      type: object
+      required:
+        - detail
+      properties:
+        detail:
+          type: string
+          description: Error message
+          example: "Category name already exists"
+
+  responses:
+    BadRequest:
+      description: Bad request (validation error)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            detail: "Category name is required"
+
+    Unauthorized:
+      description: Unauthorized (missing or invalid authentication)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            detail: "Not authenticated"
+
+    NotFound:
+      description: Category not found or access denied
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            detail: "Category not found or you don't have permission to access it"

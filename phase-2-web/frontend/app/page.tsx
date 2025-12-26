@@ -33,15 +33,22 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <header className="bg-white/80 backdrop-blur-sm shadow-sm border-b border-gray-100 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-900">Todo App</h1>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center">
+                <span className="text-white text-xl font-bold">T</span>
+              </div>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                TaskFlow
+              </h1>
+            </div>
             <div className="flex gap-3">
               <Link href="/login">
-                <Button variant="outline">Login</Button>
+                <Button variant="ghost">Login</Button>
               </Link>
               <Link href="/register">
                 <Button>Get Started</Button>
@@ -52,21 +59,29 @@ export default function HomePage() {
       </header>
 
       {/* Hero Section */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="text-center mb-16">
-          <h2 className="text-5xl font-bold text-gray-900 mb-4">
-            Organize Your Life
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div className="text-center mb-20">
+          <div className="inline-block mb-4 px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
+            ✨ Modern Task Management
+          </div>
+          <h2 className="text-6xl font-bold text-gray-900 mb-6 leading-tight">
+            Organize Your Life,<br />
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              One Task at a Time
+            </span>
           </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            A modern, secure todo application to help you manage tasks
-            efficiently and stay productive.
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-10">
+            A beautiful, modern todo application with calendar views, categories,
+            recurring tasks, and powerful organization features.
           </p>
-          <div className="mt-8 flex gap-4 justify-center">
+          <div className="mt-10 flex gap-4 justify-center">
             <Link href="/register">
-              <Button size="lg">Create Free Account</Button>
+              <Button size="lg" className="px-8 py-4 text-lg shadow-lg hover:shadow-xl">
+                Create Free Account
+              </Button>
             </Link>
             <Link href="/login">
-              <Button variant="outline" size="lg">
+              <Button variant="outline" size="lg" className="px-8 py-4 text-lg">
                 Sign In
               </Button>
             </Link>
@@ -77,7 +92,7 @@ export default function HomePage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
           <Card>
             <CardContent className="p-6">
-              <div className="text-blue-600 text-4xl mb-4"></div>
+              <div className="text-blue-600 text-4xl mb-4">✓</div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
                 Task Management
               </h3>
@@ -90,7 +105,7 @@ export default function HomePage() {
 
           <Card>
             <CardContent className="p-6">
-              <div className="text-blue-600 text-4xl mb-4">=</div>
+              <div className="text-blue-600 text-4xl mb-4">🔒</div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
                 Secure & Private
               </h3>
@@ -103,7 +118,7 @@ export default function HomePage() {
 
           <Card>
             <CardContent className="p-6">
-              <div className="text-blue-600 text-4xl mb-4">�</div>
+              <div className="text-blue-600 text-4xl mb-4">⚡</div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
                 Fast & Reliable
               </h3>
@@ -116,26 +131,31 @@ export default function HomePage() {
         </div>
 
         {/* CTA Section */}
-        <div className="mt-20 text-center bg-white rounded-2xl shadow-lg p-12">
-          <h3 className="text-3xl font-bold text-gray-900 mb-4">
+        <div className="mt-24 text-center bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl shadow-2xl p-16 text-white">
+          <h3 className="text-4xl font-bold mb-4">
             Ready to Get Started?
           </h3>
-          <p className="text-lg text-gray-600 mb-8">
+          <p className="text-xl text-blue-100 mb-10 max-w-2xl mx-auto">
             Join thousands of users who are already managing their tasks more
-            effectively.
+            effectively with TaskFlow.
           </p>
           <Link href="/register">
-            <Button size="lg">Create Your Account</Button>
+            <Button size="lg" variant="secondary" className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 text-lg shadow-lg">
+              Create Your Free Account →
+            </Button>
           </Link>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 mt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <p className="text-center text-gray-600">
-            � 2025 Todo App. Built with Next.js and FastAPI.
-          </p>
+      <footer className="bg-white/50 backdrop-blur-sm border-t border-gray-200 mt-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="flex items-center justify-center gap-2 text-gray-600">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
+              <span className="text-white text-sm font-bold">T</span>
+            </div>
+            <p>© 2025 TaskFlow. Built with Next.js and FastAPI.</p>
+          </div>
         </div>
       </footer>
     </div>

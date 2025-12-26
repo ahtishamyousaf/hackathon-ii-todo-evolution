@@ -1,0 +1,528 @@
+openapi: 3.1.0
+info:
+  title: Task Management API
+  version: 1.0.0
+  description: |
+    RESTful API for basic task CRUD operations with user isolation.
+
+    **Feature**: 003-task-crud
+    **Authentication**: JWT Bearer token (Better Auth)
+    **User Isolation**: All endpoints filter by authenticated user ID from JWT
+
+    **Functional Requirements Mapping**:
+    - FR-001: POST /api/tasks (create with validation)
+    - FR-002: GET /api/tasks (list all user's tasks)
+    - FR-003: PUT /api/tasks/{id} (update title/description)
+    - FR-004: PATCH /api/tasks/{id}/complete (toggle completion)
+    - FR-005: DELETE /api/tasks/{id} (permanent deletion)
+    - FR-006: User isolation enforced on all endpoints
+    - FR-007: Title validation on create/update
+    - FR-008: Auto-generated unique ID
+    - FR-009: Database persistence
+    - FR-010: Automatic timestamp tracking
+  contact:
+    name: Phase II Team
+    email: support@example.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8000
+    description: Development server
+  - url: https://api.production.example.com
+    description: Production server (TBD)
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Tasks
+    description: Task CRUD operations
+
+paths:
+  /api/tasks:
+    get:
+      summary: List all tasks for authenticated user
+      description: |
+        Retrieves all tasks belonging to the authenticated user.
+        Results are filtered by user_id from JWT token (user isolation).
+
+        **User Story**: US-002 (View All Tasks)
+        **Success Criteria**: SC-002 (load within 2 seconds)
+        **Performance Target**: <500ms p95
+      operationId: listTasks
+      tags:
+        - Tasks
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Successfully retrieved task list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+              examples:
+                withTasks:
+                  summary: User with 3 tasks
+                  value:
+                    - id: 1
+                      title: "Complete project report"
+                      description: "Include Q4 metrics"
+                      completed: false
+                      user_id: 42
+                      created_at: "2025-12-24T10:30:00Z"
+                      updated_at: "2025-12-24T10:30:00Z"
+                    - id: 2
+                      title: "Call dentist"
+                      description: ""
+                      completed: true
+                      user_id: 42
+                      created_at: "2025-12-24T09:15:00Z"
+                      updated_at: "2025-12-24T14:20:00Z"
+                    - id: 3
+                      title: "Buy groceries"
+                      description: "Milk, eggs, bread"
+                      completed: false
+                      user_id: 42
+                      created_at: "2025-12-24T08:00:00Z"
+                      updated_at: "2025-12-24T08:00:00Z"
+                emptyList:
+                  summary: User with no tasks
+                  value: []
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create new task
+      description: |
+        Creates a new task for the authenticated user.
+        User ID is automatically extracted from JWT token.
+
+        **User Story**: US-001 (Create New Task)
+        **Success Criteria**: SC-001 (create in under 10 seconds)
+        **Validation**: Title required (1-200 chars), description optional (max 1000 chars)
+      operationId: createTask
+      tags:
+        - Tasks
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCreate'
+            examples:
+              withDescription:
+                summary: Task with title and description
+                value:
+                  title: "Complete project report"
+                  description: "Include Q4 metrics and performance analysis"
+                  completed: false
+              titleOnly:
+                summary: Task with title only
+                value:
+                  title: "Call dentist"
+      responses:
+        '201':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+              example:
+                id: 1
+                title: "Complete project report"
+                description: "Include Q4 metrics"
+                completed: false
+                user_id: 42
+                created_at: "2025-12-24T10:30:00Z"
+                updated_at: "2025-12-24T10:30:00Z"
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/tasks/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Task ID
+        schema:
+          type: integer
+          minimum: 1
+        example: 1
+
+    get:
+      summary: Get single task by ID
+      description: |
+        Retrieves a specific task by ID.
+        User can only access their own tasks (user isolation enforced).
+
+        **User Story**: US-002 (View All Tasks)
+        **Security**: Returns 404 if task belongs to different user
+      operationId: getTask
+      tags:
+        - Tasks
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Task found and returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+              example:
+                id: 1
+                title: "Complete project report"
+                description: "Include Q4 metrics"
+                completed: false
+                user_id: 42
+                created_at: "2025-12-24T10:30:00Z"
+                updated_at: "2025-12-24T10:30:00Z"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      summary: Update task details
+      description: |
+        Updates an existing task's title and/or description.
+        User can only update their own tasks (user isolation enforced).
+
+        **User Story**: US-003 (Update Existing Task)
+        **Success Criteria**: SC-006 (changes persist after page refresh)
+        **Validation**: Title required (1-200 chars), description optional (max 1000 chars)
+      operationId: updateTask
+      tags:
+        - Tasks
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskUpdate'
+            examples:
+              updateTitle:
+                summary: Update title only
+                value:
+                  title: "Complete quarterly review meeting preparation"
+              updateBoth:
+                summary: Update title and description
+                value:
+                  title: "Schedule quarterly review meeting"
+                  description: "Prepare agenda, invite team, book room"
+              updateDescription:
+                summary: Update description only
+                value:
+                  description: "Updated task details"
+      responses:
+        '200':
+          description: Task updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+              example:
+                id: 1
+                title: "Complete quarterly review meeting preparation"
+                description: "Prepare agenda, invite team, book room"
+                completed: false
+                user_id: 42
+                created_at: "2025-12-24T10:30:00Z"
+                updated_at: "2025-12-24T15:45:00Z"
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      summary: Delete task permanently
+      description: |
+        Permanently deletes a task.
+        User can only delete their own tasks (user isolation enforced).
+
+        **User Story**: US-005 (Delete Task)
+        **Success Criteria**: SC-007 (requires confirmation in UI)
+        **Note**: Confirmation handled by frontend, backend performs immediate deletion
+      operationId: deleteTask
+      tags:
+        - Tasks
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: Task deleted successfully (no content returned)
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/tasks/{id}/complete:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Task ID
+        schema:
+          type: integer
+          minimum: 1
+        example: 1
+
+    patch:
+      summary: Toggle task completion status
+      description: |
+        Toggles task completion status (complete ↔ incomplete).
+        User can only toggle their own tasks (user isolation enforced).
+
+        **User Story**: US-004 (Mark Task Complete)
+        **Success Criteria**: SC-004 (single click, visual feedback within 1 second)
+        **Behavior**: Flips boolean value (true → false, false → true)
+      operationId: toggleTaskComplete
+      tags:
+        - Tasks
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Task completion status toggled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+              example:
+                id: 1
+                title: "Complete project report"
+                description: "Include Q4 metrics"
+                completed: true
+                user_id: 42
+                created_at: "2025-12-24T10:30:00Z"
+                updated_at: "2025-12-24T16:00:00Z"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  schemas:
+    Task:
+      type: object
+      description: Complete task entity (database representation)
+      required:
+        - id
+        - title
+        - completed
+        - user_id
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: integer
+          description: Unique task identifier
+          example: 1
+          readOnly: true
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Task title (required, non-empty)
+          example: "Complete project report"
+        description:
+          type: string
+          maxLength: 1000
+          description: Task description (optional)
+          example: "Include Q4 metrics and performance analysis"
+          default: ""
+        completed:
+          type: boolean
+          description: Task completion status
+          example: false
+          default: false
+        user_id:
+          type: integer
+          description: Owner user ID (from JWT token)
+          example: 42
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          description: Task creation timestamp (ISO 8601)
+          example: "2025-12-24T10:30:00Z"
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp (ISO 8601)
+          example: "2025-12-24T10:30:00Z"
+          readOnly: true
+
+    TaskCreate:
+      type: object
+      description: Task creation payload (excludes auto-generated fields)
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Task title (required, non-empty)
+          example: "Complete project report"
+        description:
+          type: string
+          maxLength: 1000
+          description: Task description (optional)
+          example: "Include Q4 metrics"
+          default: ""
+        completed:
+          type: boolean
+          description: Initial completion status (optional, defaults to false)
+          example: false
+          default: false
+
+    TaskUpdate:
+      type: object
+      description: Task update payload (all fields optional, at least one required)
+      minProperties: 1
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Updated task title
+          example: "Complete quarterly review meeting preparation"
+        description:
+          type: string
+          maxLength: 1000
+          description: Updated task description
+          example: "Prepare agenda, invite team, book room"
+        completed:
+          type: boolean
+          description: Updated completion status
+          example: true
+
+    Error:
+      type: object
+      description: Standard error response
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error type/code
+          example: "ValidationError"
+        message:
+          type: string
+          description: Human-readable error message
+          example: "Title is required and must be 1-200 characters"
+        details:
+          type: object
+          description: Additional error details (optional)
+          additionalProperties: true
+          example:
+            field: "title"
+            constraint: "minLength"
+            value: ""
+
+  responses:
+    UnauthorizedError:
+      description: Authentication required or invalid token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Unauthorized"
+            message: "Authentication required. Please provide a valid JWT token."
+
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            emptyTitle:
+              summary: Empty title error
+              value:
+                error: "ValidationError"
+                message: "Title is required and must be 1-200 characters"
+                details:
+                  field: "title"
+                  constraint: "minLength"
+                  value: ""
+            titleTooLong:
+              summary: Title too long error
+              value:
+                error: "ValidationError"
+                message: "Title exceeds maximum length of 200 characters"
+                details:
+                  field: "title"
+                  constraint: "maxLength"
+                  value: "Very long title..."
+            descriptionTooLong:
+              summary: Description too long error
+              value:
+                error: "ValidationError"
+                message: "Description exceeds maximum length of 1000 characters"
+                details:
+                  field: "description"
+                  constraint: "maxLength"
+
+    NotFoundError:
+      description: Task not found or access denied (user isolation)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "NotFound"
+            message: "Task not found or you don't have permission to access it"
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "InternalServerError"
+            message: "An unexpected error occurred. Please try again later."
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token issued by Better Auth.
+        Include in Authorization header: `Authorization: Bearer <token>`
+
+        **User Extraction**:
+        - Backend extracts user_id from JWT payload
+        - All endpoints automatically filter by authenticated user
+        - No user_id in URL path (security best practice per constitution)

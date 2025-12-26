@@ -37,7 +37,7 @@ export default function RegisterPage() {
 
     try {
       await register(email, password);
-      router.push("/dashboard");
+      router.push("/tasks");
     } catch (err: any) {
       setError(err.message || "Registration failed. Please try again.");
     } finally {

@@ -1,16 +1,18 @@
 """
 Authentication dependencies for FastAPI routes.
+
+Validates JWT tokens for authentication.
 """
 
 from typing import Annotated
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlmodel import Session
+from sqlmodel import Session, select
+from jose import JWTError, jwt
 
 from app.dependencies.database import get_session
 from app.models.user import User
-from app.utils.jwt import verify_token
-from app.services.auth import get_user_by_email
+from app.config import settings
 
 
 # HTTP Bearer token scheme
@@ -32,25 +34,41 @@ def get_current_user(
         Current authenticated User object
 
     Raises:
-        HTTPException: If token is invalid or user not found
+        HTTPException: If token is invalid, expired, or user not found
     """
-    # Extract token from credentials
     token = credentials.credentials
 
-    # Verify and decode token
-    payload = verify_token(token)
-
-    # Extract user email from token payload
-    email = payload.get("email")
-    if email is None:
+    if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token: missing email",
+            detail="Not authenticated",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Retrieve user from database
-    user = get_user_by_email(session, email)
+    try:
+        # Decode JWT token using Better Auth secret (shared with frontend)
+        payload = jwt.decode(token, settings.better_auth_secret, algorithms=[settings.algorithm])
+        user_id: str = payload.get("sub")
+
+        if user_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication credentials",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+    except JWTError as e:
+        print(f"JWT decode error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Get user from database
+    statement = select(User).where(User.id == int(user_id))
+    user = session.exec(statement).first()
+
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

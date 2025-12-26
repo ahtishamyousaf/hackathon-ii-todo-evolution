@@ -1,0 +1,386 @@
+openapi: 3.0.3
+info:
+  title: Tasks API (Updated for Categories)
+  description: Updated task endpoints with category support
+  version: 2.0.0
+  contact:
+    name: Task Categories System
+    url: https://github.com/your-repo/hackathon-2
+
+servers:
+  - url: http://localhost:8000
+    description: Development server
+
+security:
+  - BearerAuth: []
+
+paths:
+  /api/tasks:
+    get:
+      summary: List all tasks (with optional category filter)
+      description: Retrieve all tasks for the authenticated user, optionally filtered by category
+      operationId: listTasks
+      tags:
+        - tasks
+      parameters:
+        - name: category_id
+          in: query
+          required: false
+          description: Filter tasks by category ID (omit to see all tasks)
+          schema:
+            type: integer
+            nullable: true
+            minimum: 1
+          example: 3
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+              examples:
+                all_tasks:
+                  summary: All tasks (no filter)
+                  value:
+                    - id: 1
+                      title: "Prepare presentation"
+                      description: "Q4 results"
+                      completed: false
+                      category_id: 1
+                      user_id: 42
+                      created_at: "2025-12-24T09:00:00Z"
+                      updated_at: "2025-12-24T09:00:00Z"
+                    - id: 2
+                      title: "Buy groceries"
+                      description: "Milk, eggs, bread"
+                      completed: false
+                      category_id: 3
+                      user_id: 42
+                      created_at: "2025-12-24T09:10:00Z"
+                      updated_at: "2025-12-24T09:10:00Z"
+                    - id: 3
+                      title: "Call dentist"
+                      description: ""
+                      completed: true
+                      category_id: null
+                      user_id: 42
+                      created_at: "2025-12-24T08:00:00Z"
+                      updated_at: "2025-12-24T10:00:00Z"
+                filtered_by_category:
+                  summary: Filtered by category_id=1
+                  value:
+                    - id: 1
+                      title: "Prepare presentation"
+                      description: "Q4 results"
+                      completed: false
+                      category_id: 1
+                      user_id: 42
+                      created_at: "2025-12-24T09:00:00Z"
+                      updated_at: "2025-12-24T09:00:00Z"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      summary: Create a new task
+      description: Create a new task with optional category assignment
+      operationId: createTask
+      tags:
+        - tasks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCreate'
+            examples:
+              with_category:
+                summary: Task with category
+                value:
+                  title: "Finish report"
+                  description: "Complete by Friday"
+                  completed: false
+                  category_id: 1
+              without_category:
+                summary: Uncategorized task
+                value:
+                  title: "Call mom"
+                  description: ""
+                  completed: false
+                  category_id: null
+      responses:
+        '201':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/tasks/{id}:
+    get:
+      summary: Get task by ID
+      description: Retrieve a specific task by its ID
+      operationId: getTask
+      tags:
+        - tasks
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      summary: Update task
+      description: Update an existing task (including category assignment)
+      operationId: updateTask
+      tags:
+        - tasks
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskUpdate'
+            examples:
+              change_category:
+                summary: Change task category
+                value:
+                  title: "Finish report"
+                  description: "Complete by Friday"
+                  category_id: 2
+              remove_category:
+                summary: Remove category (make uncategorized)
+                value:
+                  title: "Finish report"
+                  category_id: null
+      responses:
+        '200':
+          description: Task updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Delete task
+      description: Permanently delete a task
+      operationId: deleteTask
+      tags:
+        - tasks
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+      responses:
+        '204':
+          description: Task deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/tasks/{id}/complete:
+    patch:
+      summary: Toggle task completion
+      description: Toggle the completion status of a task
+      operationId: toggleTaskComplete
+      tags:
+        - tasks
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+      responses:
+        '200':
+          description: Task completion status toggled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token from Better Auth authentication
+
+  parameters:
+    TaskId:
+      name: id
+      in: path
+      required: true
+      description: Task ID
+      schema:
+        type: integer
+        minimum: 1
+      example: 1
+
+  schemas:
+    Task:
+      type: object
+      required:
+        - id
+        - title
+        - description
+        - completed
+        - user_id
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: integer
+          description: Unique task identifier
+          example: 1
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Task title
+          example: "Prepare presentation"
+        description:
+          type: string
+          maxLength: 1000
+          description: Task description
+          example: "Q4 results"
+        completed:
+          type: boolean
+          description: Task completion status
+          example: false
+        category_id:
+          type: integer
+          nullable: true
+          description: ID of the category this task belongs to (null = uncategorized)
+          example: 1
+        user_id:
+          type: integer
+          description: ID of the user who owns this task
+          example: 42
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when task was created
+          example: "2025-12-24T09:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp when task was last updated
+          example: "2025-12-24T09:00:00Z"
+
+    TaskCreate:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Task title
+          example: "Finish report"
+        description:
+          type: string
+          maxLength: 1000
+          description: Task description (optional)
+          example: "Complete by Friday"
+        completed:
+          type: boolean
+          description: Initial completion status (defaults to false)
+          example: false
+        category_id:
+          type: integer
+          nullable: true
+          description: Category to assign task to (null = uncategorized)
+          example: 1
+
+    TaskUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Updated task title
+          example: "Finish monthly report"
+        description:
+          type: string
+          maxLength: 1000
+          description: Updated task description
+          example: "Complete by Friday EOD"
+        completed:
+          type: boolean
+          description: Updated completion status
+          example: true
+        category_id:
+          type: integer
+          nullable: true
+          description: Updated category (null = remove category)
+          example: 2
+
+    Error:
+      type: object
+      required:
+        - detail
+      properties:
+        detail:
+          type: string
+          description: Error message
+          example: "Task not found"
+
+  responses:
+    BadRequest:
+      description: Bad request (validation error)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            invalid_category:
+              summary: Invalid category ID
+              value:
+                detail: "Category does not exist or does not belong to you"
+            validation_error:
+              summary: Validation error
+              value:
+                detail: "Title is required"
+
+    Unauthorized:
+      description: Unauthorized (missing or invalid authentication)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            detail: "Not authenticated"
+
+    NotFound:
+      description: Task not found or access denied
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            detail: "Task not found or you don't have permission to access it"
