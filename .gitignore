@@ -151,3 +151,16 @@ backend.log
 # OS artifacts
 *:Zone.Identifier
 .DS_Store
+
+# Phase 2 specific
+test-results/
+playwright-report/
+*.tsbuildinfo
+uploads/
+backup-manual-code/
+.next/
+e2e/
+
+# Test artifacts
+test_*.sh
+*.spec.ts
