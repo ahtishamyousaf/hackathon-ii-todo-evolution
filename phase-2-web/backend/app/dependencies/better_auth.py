@@ -71,6 +71,7 @@ def get_current_user_from_better_auth(
         if not fastapi_user:
             # Create FastAPI user from Better Auth user
             fastapi_user = User(
+                id=user_id_str,  # Use Better Auth user ID
                 email=email,
                 password_hash="",  # Better Auth handles passwords
                 created_at=created_at or datetime.utcnow()

@@ -1,0 +1,317 @@
+openapi: 3.0.0
+info:
+  title: Chat API
+  version: 1.0.0
+  description: Stateless chat endpoint for AI-powered task management (Phase III)
+
+servers:
+  - url: http://localhost:8000
+    description: Local development
+  - url: https://api.taskflow.app
+    description: Production
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Better Auth JWT token
+
+  schemas:
+    ChatRequest:
+      type: object
+      required:
+        - message
+      properties:
+        conversation_id:
+          type: integer
+          nullable: true
+          description: Optional conversation ID (omit to create new conversation)
+          example: 42
+        message:
+          type: string
+          minLength: 1
+          maxLength: 5000
+          description: User message text
+          example: "Add a task to buy groceries"
+
+    ChatResponse:
+      type: object
+      required:
+        - conversation_id
+        - response
+      properties:
+        conversation_id:
+          type: integer
+          description: Conversation ID (newly created or existing)
+          example: 42
+        response:
+          type: string
+          description: AI assistant response
+          example: "I've added 'Buy groceries' to your tasks!"
+        tool_calls:
+          type: array
+          description: Optional list of tools called by AI
+          items:
+            $ref: '#/components/schemas/ToolCall'
+
+    ToolCall:
+      type: object
+      properties:
+        tool:
+          type: string
+          description: Name of tool called
+          example: "add_task"
+        parameters:
+          type: object
+          description: Parameters passed to tool
+          example: {"title": "Buy groceries"}
+        result:
+          type: object
+          description: Tool execution result
+          example: {"task_id": 15, "status": "created"}
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+        detail:
+          type: string
+          description: Additional error details
+
+paths:
+  /api/chat:
+    post:
+      summary: Send chat message and get AI response
+      description: |
+        Stateless chat endpoint. Sends user message, receives AI response.
+        - Creates new conversation if conversation_id is omitted
+        - Fetches conversation history from database on each request
+        - Calls OpenAI Agents SDK with MCP tools
+        - Stores both user and assistant messages in database
+        - Returns AI response and conversation ID
+
+        **Stateless Architecture**: Server holds NO state between requests.
+        All conversation history is persisted in PostgreSQL.
+
+      security:
+        - BearerAuth: []
+
+      tags:
+        - Chat
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+            examples:
+              new_conversation:
+                summary: Start new conversation
+                value:
+                  message: "Add a task to call the dentist"
+              existing_conversation:
+                summary: Continue existing conversation
+                value:
+                  conversation_id: 42
+                  message: "Show me all my pending tasks"
+
+      responses:
+        '200':
+          description: Successful chat response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+              examples:
+                task_created:
+                  summary: Task created successfully
+                  value:
+                    conversation_id: 42
+                    response: "I've added 'Call the dentist' to your tasks!"
+                    tool_calls:
+                      - tool: "add_task"
+                        parameters: {"title": "Call the dentist"}
+                        result: {"task_id": 15, "status": "created", "title": "Call the dentist"}
+                task_list:
+                  summary: Tasks listed
+                  value:
+                    conversation_id: 42
+                    response: "Here are your pending tasks: 1. Buy groceries 2. Call dentist 3. Pay bills"
+                    tool_calls:
+                      - tool: "list_tasks"
+                        parameters: {"status": "pending"}
+                        result: [{"id": 1, "title": "Buy groceries"}, {"id": 2, "title": "Call dentist"}]
+
+        '401':
+          description: Unauthorized - Invalid or missing JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Unauthorized"
+                detail: "Invalid JWT token"
+
+        '403':
+          description: Forbidden - Conversation belongs to another user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Forbidden"
+                detail: "You don't have permission to access this conversation"
+
+        '404':
+          description: Not Found - Conversation ID doesn't exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Not Found"
+                detail: "Conversation 999 does not exist"
+
+        '422':
+          description: Unprocessable Entity - Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Validation Error"
+                detail: "Message cannot be empty"
+
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Internal Server Error"
+                detail: "Failed to process chat message"
+
+  /api/chat/conversations:
+    get:
+      summary: List user's conversations
+      description: |
+        Get all conversations belonging to the authenticated user.
+        Returns conversations ordered by most recently updated first.
+
+      security:
+        - BearerAuth: []
+
+      tags:
+        - Chat
+
+      responses:
+        '200':
+          description: List of conversations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  conversations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          example: 42
+                        user_id:
+                          type: string
+                          example: "user_123"
+                        created_at:
+                          type: string
+                          format: date-time
+                          example: "2025-12-27T10:00:00Z"
+                        updated_at:
+                          type: string
+                          format: date-time
+                          example: "2025-12-27T15:30:00Z"
+
+        '401':
+          description: Unauthorized - Invalid or missing JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/chat/conversations/{conversation_id}/messages:
+    get:
+      summary: Get conversation message history
+      description: |
+        Retrieve all messages for a specific conversation.
+        Returns messages ordered chronologically (oldest first).
+
+      security:
+        - BearerAuth: []
+
+      tags:
+        - Chat
+
+      parameters:
+        - name: conversation_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Conversation ID
+          example: 42
+
+      responses:
+        '200':
+          description: Conversation messages
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          example: 1
+                        role:
+                          type: string
+                          enum: [user, assistant]
+                          example: "user"
+                        content:
+                          type: string
+                          example: "Add a task to buy groceries"
+                        created_at:
+                          type: string
+                          format: date-time
+                          example: "2025-12-27T10:00:00Z"
+
+        '401':
+          description: Unauthorized - Invalid or missing JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '403':
+          description: Forbidden - Conversation belongs to another user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '404':
+          description: Not Found - Conversation doesn't exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'

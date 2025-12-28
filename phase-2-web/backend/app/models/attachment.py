@@ -28,7 +28,7 @@ class Attachment(SQLModel, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
     task_id: int = Field(foreign_key="tasks.id", index=True, nullable=False)
-    user_id: int = Field(foreign_key="users.id", index=True, nullable=False)
+    user_id: str = Field(foreign_key="users.id", index=True, nullable=False)
     filename: str = Field(max_length=255, nullable=False)
     file_path: str = Field(max_length=500, nullable=False)
     file_size: int = Field(nullable=False)  # Size in bytes

@@ -48,19 +48,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { data: session, isPending, error } = authClient.useSession();
 
   // Extract session token from Better Auth
-  // Better Auth stores JWT tokens in session
+  // Better Auth stores session tokens at session.session.token
   const token = session?.session?.token || null;
 
   // Update API client with Better Auth token whenever it changes
   useEffect(() => {
     if (token) {
       api.setToken(token);
-      console.log("[Auth] Token updated from Better Auth session");
     } else {
       api.setToken(null);
-      console.log("[Auth] No token available");
     }
   }, [token]);
+
+  // Auto-refresh session periodically (every 30 minutes)
+  useEffect(() => {
+    if (!session?.user) return;
+
+    const refreshInterval = setInterval(async () => {
+      try {
+        // Trigger session refresh by calling getSession
+        await authClient.getSession();
+      } catch (err) {
+        console.error('Failed to refresh session:', err);
+      }
+    }, 30 * 60 * 1000); // 30 minutes
+
+    return () => clearInterval(refreshInterval);
+  }, [session?.user]);
+
+  // Refresh session when user returns to tab/window
+  useEffect(() => {
+    if (!session?.user) return;
+
+    const handleVisibilityChange = async () => {
+      if (!document.hidden) {
+        try {
+          // Refresh session when tab becomes visible
+          await authClient.getSession();
+        } catch (err) {
+          console.error('Failed to refresh session on focus:', err);
+        }
+      }
+    };
+
+    const handleFocus = async () => {
+      try {
+        // Refresh session when window regains focus
+        await authClient.getSession();
+      } catch (err) {
+        console.error('Failed to refresh session on focus:', err);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [session?.user]);
 
   const login = async (email: string, password: string) => {
     const result = await authClient.signIn.email({

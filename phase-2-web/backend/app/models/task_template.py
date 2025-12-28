@@ -17,7 +17,7 @@ class TaskTemplate(SQLModel, table=True):
     __tablename__ = "task_templates"
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="users.id", index=True)
+    user_id: str = Field(foreign_key="users.id", index=True)
 
     name: str = Field(max_length=200)
     description: Optional[str] = Field(default=None, max_length=2000)

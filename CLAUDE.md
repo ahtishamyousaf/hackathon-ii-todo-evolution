@@ -413,6 +413,240 @@ See `INTEGRATION_GUIDE.md` for complete testing checklist covering:
 - File attachments (upload/delete/preview)
 - Enhanced search (6 filter types)
 
+## Phase III: AI-Powered Todo Chatbot (Feature 006)
+
+**Status: Implementation Complete** - Natural language task management via conversational AI
+
+### Overview
+
+Conversational AI interface for task management using OpenAI GPT-4 with MCP (Model Context Protocol) tools. Users manage tasks through natural language without clicking buttons or filling forms.
+
+### Architecture
+
+**Backend Components:**
+- **OpenAI Agent** (`app/agents/task_agent.py`): GPT-4 with function calling
+- **MCP Server** (`app/mcp/server.py`): Tool registry and execution
+- **MCP Tools** (`app/mcp/tools/`): 5 task operation tools
+- **Chat API** (`app/routers/chat.py`): Stateless endpoint with conversation persistence
+- **Database Models** (`app/models/`): Conversation and Message tables
+
+**Frontend Components:**
+- **Chat Page** (`app/(app)/chat/page.tsx`): Main chat interface with mobile-responsive sidebar
+- **ChatInterface** (`components/ChatInterface.tsx`): Message display, input, tool call formatting
+- **ConversationList** (`components/ConversationList.tsx`): Conversation history sidebar
+- **Chat API Client** (`lib/chatApi.ts`): Backend integration
+
+### MCP Tools
+
+The AI agent has access to 5 task management tools:
+
+1. **add_task**: Create new task
+   - Parameters: `title` (required), `description`, `priority`, `due_date`, `category_id`
+   - Returns: `task_id`, `status`, `title`
+
+2. **list_tasks**: View tasks with filtering
+   - Parameters: `status` (all/pending/completed), `category_id`, `limit`
+   - Returns: Array of task objects with full details
+
+3. **complete_task**: Mark task as complete/incomplete
+   - Parameters: `task_id` (required), `completed` (boolean, default: true)
+   - Returns: `task_id`, `status`, `title`
+
+4. **update_task**: Modify task details
+   - Parameters: `task_id` (required), `title`, `description`, `priority`, `due_date`, `category_id`
+   - Returns: `task_id`, `status`, `title`, `updated_fields`
+
+5. **delete_task**: Permanently delete task
+   - Parameters: `task_id` (required)
+   - Returns: `task_id`, `status`, `title`
+
+### Security Architecture
+
+**Critical Pattern: user_id Injection**
+```python
+# ❌ WRONG - Never accept user_id from AI
+async def add_task(user_id: str, title: str, session: Session):
+    # AI could impersonate users!
+
+# ✅ CORRECT - Inject user_id from JWT token
+async def execute_tool(tool_name: str, parameters: dict, user_id: str, db_session: Session):
+    parameters_with_user = {
+        **parameters,
+        "user_id": user_id,  # From JWT, NOT from AI
+        "session": db_session
+    }
+    result = await self.tools[tool_name](**parameters_with_user)
+```
+
+All MCP tools:
+- Accept `user_id` and `session` via parameter injection
+- Never accept `user_id` from AI parameters
+- Validate ownership before mutations
+- Enforce user isolation
+
+### Stateless Server Design
+
+**Key Principle**: Server holds NO state between requests
+
+```python
+@router.post("/api/chat")
+async def chat(request: ChatRequest, current_user: User, session: Session):
+    # 1. Get or create conversation
+    conversation = get_or_create_conversation(request.conversation_id, current_user)
+
+    # 2. Store user message in database
+    store_message(conversation.id, "user", request.message)
+
+    # 3. Fetch conversation history from database (last 20 messages)
+    history = fetch_history(conversation.id, limit=20)
+
+    # 4. Build messages array for OpenAI
+    messages = [{"role": msg.role, "content": msg.content} for msg in history]
+
+    # 5. Call OpenAI agent with tools
+    response_text, tool_calls = await get_agent_response(
+        messages, tool_schemas, tool_executor
+    )
+
+    # 6. Store assistant response in database
+    store_message(conversation.id, "assistant", response_text)
+
+    # 7. Return response (server state is clean)
+    return ChatResponse(conversation_id=conversation.id, response=response_text, tool_calls=tool_calls)
+```
+
+Benefits:
+- Server can restart without losing conversations
+- Horizontal scaling works seamlessly
+- No memory leaks from long conversations
+- Clear separation between state (database) and logic (API)
+
+### Error Handling & Retry Logic
+
+OpenAI API calls include exponential backoff retry logic:
+
+```python
+# Handles:
+# - Rate limit errors (429): Retry with backoff
+# - API errors (500, 503): Retry with backoff
+# - Connection errors: Retry with backoff
+# Max retries: 3 attempts
+# Backoff: 1s, 2s, 4s (with jitter)
+```
+
+### Mobile Responsiveness
+
+Chat page is fully mobile-responsive:
+- **Desktop**: Sidebar always visible
+- **Mobile**: Sidebar hidden, accessible via hamburger menu
+- **Overlay**: Dark overlay when sidebar open on mobile
+- **Transitions**: Smooth slide-in/slide-out animations
+
+### Natural Language Examples
+
+```text
+User: "Add a task to buy groceries tomorrow"
+AI: [Calls add_task with title="Buy groceries", due_date="2025-12-28"]
+    "I've added 'Buy groceries' to your tasks with a due date of tomorrow!"
+
+User: "What's on my todo list?"
+AI: [Calls list_tasks]
+    "You have 5 tasks:
+    ✓ Buy groceries (completed)
+    □ Call mom (high priority, due today)
+    □ Finish report (medium priority)
+    ..."
+
+User: "Mark task 3 as done"
+AI: [Calls complete_task with task_id=3]
+    "Great! I've marked 'Finish report' as complete."
+
+User: "Delete the grocery task"
+AI: [Calls list_tasks first to find task]
+    "I found a completed task 'Buy groceries'. Are you sure you want to delete it?"
+User: "Yes"
+AI: [Calls delete_task]
+    "Done! I've deleted 'Buy groceries' from your list."
+```
+
+### Environment Variables
+
+```bash
+# Required for Phase III
+OPENAI_API_KEY=sk-...  # OpenAI API key for GPT-4
+
+# Existing (still required)
+DATABASE_URL=postgresql://...
+BETTER_AUTH_SECRET=...
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```
+
+### Database Schema
+
+**Conversations Table:**
+```sql
+CREATE TABLE conversations (
+    id SERIAL PRIMARY KEY,
+    user_id VARCHAR NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**Messages Table:**
+```sql
+CREATE TABLE messages (
+    id SERIAL PRIMARY KEY,
+    user_id VARCHAR NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    role VARCHAR(20) NOT NULL CHECK (role IN ('user', 'assistant')),
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Testing
+
+Quickstart scenarios (from `specs/006-ai-chatbot/quickstart.md`):
+1. Add task via natural language
+2. List tasks with different filters
+3. Complete task by number
+4. Delete task by name
+5. Update task details
+6. Create new conversation
+7. Resume conversation after refresh
+8. Authentication validation (401/403 errors)
+
+### Key Files
+
+**Backend:**
+- `app/agents/task_agent.py` - OpenAI agent configuration
+- `app/mcp/server.py` - MCP server and tool registry
+- `app/mcp/tools/*.py` - 5 MCP tool implementations
+- `app/routers/chat.py` - Chat API endpoint
+- `app/models/conversation.py` - Conversation model
+- `app/models/message.py` - Message model with role validation
+- `app/schemas/chat.py` - Pydantic schemas for chat API
+
+**Frontend:**
+- `app/(app)/chat/page.tsx` - Chat page with sidebar
+- `components/ChatInterface.tsx` - Main chat UI
+- `components/ConversationList.tsx` - Conversation sidebar
+- `lib/chatApi.ts` - Chat API client
+- `types/chat.ts` - TypeScript interfaces
+
+### Implementation Notes
+
+- All conversations are user-isolated (JWT authentication)
+- Tool calls are displayed in chat with special formatting
+- List tasks shows checkbox icons, priority badges, due dates
+- Delete operations require confirmation (AI system prompt)
+- Conversation history limited to last 20 messages per request
+- Mobile-responsive with hamburger menu sidebar toggle
+- Dark mode support throughout
+- Loading indicators show "Processing your request..." during AI calls
+- Error handling with automatic retry for transient failures
+
 ## Important Notes
 
 ### Better Auth Integration

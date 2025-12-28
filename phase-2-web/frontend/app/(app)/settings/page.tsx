@@ -7,8 +7,9 @@ import Button from "@/components/ui/Button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useNotifications } from "@/contexts/NotificationContext";
-import { User, Bell, Palette, Globe, Lock, Mail, Sun, Moon, Clock, FileText, Shield, Keyboard } from "lucide-react";
+import { User, Bell, Palette, Globe, Lock, Mail, Sun, Moon, Clock, FileText, Shield, Keyboard, Tag } from "lucide-react";
 import KeyboardShortcutsHelp from "@/components/KeyboardShortcutsHelp";
+import CategoryManager from "@/components/CategoryManager";
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -264,6 +265,20 @@ export default function SettingsPage() {
                 </Button>
               </div>
             </div>
+          </div>
+        </Card>
+
+        {/* Category Management */}
+        <Card>
+          <div className="p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <Tag className="w-5 h-5 text-pink-600" />
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Task Categories</h2>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Create and manage custom categories to organize your tasks
+            </p>
+            <CategoryManager />
           </div>
         </Card>
 

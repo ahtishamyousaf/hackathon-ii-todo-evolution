@@ -6,6 +6,7 @@ import Button from "./ui/Button";
 import SmartDatePicker from "./SmartDatePicker";
 import FileUploadArea from "./FileUploadArea";
 import { api } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 import type { TaskCreate, Task } from "@/types/task";
 import type { Category } from "@/types/category";
 
@@ -24,6 +25,7 @@ export default function QuickAddModal({
   initialDueDate,
   editTask,
 }: QuickAddModalProps) {
+  const { token } = useAuth();
   const isEditMode = !!editTask;
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -48,8 +50,10 @@ export default function QuickAddModal({
         setDueDate(editTask.due_date ? editTask.due_date.split('T')[0] : "");
         setCategoryId(editTask.category_id || undefined);
 
-        // Load existing attachments
-        loadAttachments(editTask.id);
+        // Load existing attachments (only if token is available)
+        if (token) {
+          loadAttachments(editTask.id);
+        }
       } else {
         // Set initial due date if provided (create mode)
         if (initialDueDate) {
@@ -317,7 +321,7 @@ export default function QuickAddModal({
                   onFileRemove={handleFileRemove}
                   maxFileSize={10 * 1024 * 1024}
                   maxFiles={5}
-                  existingFiles={attachments}
+                  uploadedFiles={attachments}
                 />
               </div>
             )}

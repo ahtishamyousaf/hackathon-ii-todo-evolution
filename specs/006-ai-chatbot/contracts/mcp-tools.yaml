@@ -1,0 +1,242 @@
+mcp_server:
+  name: task-management-server
+  version: 1.0.0
+  description: MCP server exposing task management operations to AI agents
+
+tools:
+  - name: add_task
+    description: Create a new task for the authenticated user
+    parameters:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Task title
+          example: "Buy groceries"
+        description:
+          type: string
+          maxLength: 1000
+          description: Optional task description
+          example: "Milk, eggs, bread"
+    returns:
+      type: object
+      required:
+        - task_id
+        - status
+        - title
+      properties:
+        task_id:
+          type: integer
+          description: ID of created task
+          example: 15
+        status:
+          type: string
+          enum: [created]
+          example: "created"
+        title:
+          type: string
+          description: Task title (confirmation)
+          example: "Buy groceries"
+    errors:
+      - code: VALIDATION_ERROR
+        description: Title is empty or too long
+      - code: DATABASE_ERROR
+        description: Failed to create task in database
+
+  - name: list_tasks
+    description: List tasks for the authenticated user with optional filtering
+    parameters:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [all, pending, completed]
+          default: all
+          description: Filter by completion status
+          example: "pending"
+    returns:
+      type: array
+      description: Array of task objects
+      items:
+        type: object
+        properties:
+          id:
+            type: integer
+            example: 1
+          title:
+            type: string
+            example: "Buy groceries"
+          description:
+            type: string
+            nullable: true
+            example: "Milk, eggs, bread"
+          completed:
+            type: boolean
+            example: false
+          priority:
+            type: string
+            enum: [low, medium, high]
+            example: "medium"
+          due_date:
+            type: string
+            format: date-time
+            nullable: true
+            example: "2025-12-31T00:00:00Z"
+          category_id:
+            type: integer
+            nullable: true
+            example: 5
+    errors:
+      - code: VALIDATION_ERROR
+        description: Invalid status parameter
+      - code: DATABASE_ERROR
+        description: Failed to query tasks
+
+  - name: complete_task
+    description: Mark a task as complete
+    parameters:
+      type: object
+      required:
+        - task_id
+      properties:
+        task_id:
+          type: integer
+          minimum: 1
+          description: ID of task to complete
+          example: 3
+    returns:
+      type: object
+      required:
+        - task_id
+        - status
+        - title
+      properties:
+        task_id:
+          type: integer
+          example: 3
+        status:
+          type: string
+          enum: [completed]
+          example: "completed"
+        title:
+          type: string
+          description: Task title (confirmation)
+          example: "Buy groceries"
+    errors:
+      - code: NOT_FOUND
+        description: Task with given ID does not exist
+      - code: FORBIDDEN
+        description: Task belongs to another user
+      - code: DATABASE_ERROR
+        description: Failed to update task
+
+  - name: delete_task
+    description: Delete a task permanently
+    parameters:
+      type: object
+      required:
+        - task_id
+      properties:
+        task_id:
+          type: integer
+          minimum: 1
+          description: ID of task to delete
+          example: 2
+    returns:
+      type: object
+      required:
+        - task_id
+        - status
+        - title
+      properties:
+        task_id:
+          type: integer
+          example: 2
+        status:
+          type: string
+          enum: [deleted]
+          example: "deleted"
+        title:
+          type: string
+          description: Task title (confirmation)
+          example: "Old task"
+    errors:
+      - code: NOT_FOUND
+        description: Task with given ID does not exist
+      - code: FORBIDDEN
+        description: Task belongs to another user
+      - code: DATABASE_ERROR
+        description: Failed to delete task
+
+  - name: update_task
+    description: Update task title or description
+    parameters:
+      type: object
+      required:
+        - task_id
+      properties:
+        task_id:
+          type: integer
+          minimum: 1
+          description: ID of task to update
+          example: 1
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: New task title (optional)
+          example: "Buy groceries and fruits"
+        description:
+          type: string
+          maxLength: 1000
+          description: New task description (optional)
+          example: "Milk, eggs, bread, apples"
+    returns:
+      type: object
+      required:
+        - task_id
+        - status
+        - title
+      properties:
+        task_id:
+          type: integer
+          example: 1
+        status:
+          type: string
+          enum: [updated]
+          example: "updated"
+        title:
+          type: string
+          description: Updated task title
+          example: "Buy groceries and fruits"
+        description:
+          type: string
+          nullable: true
+          description: Updated task description
+          example: "Milk, eggs, bread, apples"
+    errors:
+      - code: NOT_FOUND
+        description: Task with given ID does not exist
+      - code: FORBIDDEN
+        description: Task belongs to another user
+      - code: VALIDATION_ERROR
+        description: Invalid title or description
+      - code: DATABASE_ERROR
+        description: Failed to update task
+
+security:
+  - description: All tools implicitly receive user_id from JWT token context
+  - user_isolation: Tools MUST only access data belonging to authenticated user
+  - validation: All parameters validated before database interaction
+  - error_handling: User-friendly errors returned (no stack traces)
+
+implementation_notes:
+  - Tools are stateless (no caching between calls)
+  - Database session injected via context
+  - User ID extracted from JWT token (not from tool parameters)
+  - All database queries filtered by user_id for security
+  - Errors caught and converted to structured responses

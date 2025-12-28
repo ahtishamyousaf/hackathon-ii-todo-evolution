@@ -16,7 +16,7 @@ class Notification(SQLModel, table=True):
     __tablename__ = "notifications"
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="users.id", index=True)
+    user_id: str = Field(foreign_key="users.id", index=True)
 
     # Notification content
     type: str = Field(max_length=50)  # task_assigned, task_due, comment_added, etc.
@@ -25,7 +25,7 @@ class Notification(SQLModel, table=True):
 
     # Related entity
     related_task_id: Optional[int] = Field(default=None)
-    related_user_id: Optional[int] = Field(default=None)
+    related_user_id: Optional[str] = Field(default=None)
 
     # Status
     read: bool = Field(default=False)

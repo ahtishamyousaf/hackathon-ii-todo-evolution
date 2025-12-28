@@ -14,7 +14,8 @@ import {
   ChevronLeft,
   ChevronRight,
   LayoutGrid,
-  ListTodo
+  ListTodo,
+  MessageSquare
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -67,6 +68,12 @@ export default function Sidebar({ isOpen = true, onClose, onNewTask, onCollapsed
       label: "Tasks",
       icon: ListTodo,
       path: "/tasks",
+      section: "main",
+    },
+    {
+      label: "AI Chat",
+      icon: MessageSquare,
+      path: "/chat",
       section: "main",
     },
     {

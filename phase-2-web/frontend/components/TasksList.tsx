@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import type { Task } from "@/types/task";
 import type { Category } from "@/types/category";
+import { taskEvents } from "@/lib/taskEvents";
 import {
   Search,
   Filter,
@@ -14,7 +15,8 @@ import {
   Calendar as CalendarIcon,
   Tag,
   AlertCircle,
-  Plus
+  Plus,
+  X
 } from "lucide-react";
 import {
   DndContext,
@@ -102,6 +104,23 @@ export default function TasksList() {
         console.error("Failed to parse recent searches:", e);
       }
     }
+  }, []);
+
+  // Listen for task events from chat widget and refresh task list
+  useEffect(() => {
+    const handleTaskEvent = () => {
+      // Refresh task list when tasks are modified via chat
+      if (api.getToken()) {
+        fetchData();
+      }
+    };
+
+    // Subscribe to all task events
+    const unsubscribe = taskEvents.on('any', handleTaskEvent);
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -291,7 +310,7 @@ export default function TasksList() {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      let newOrder: Task[];
+      let newOrder: Task[] = [];
 
       setFilteredTasks((items) => {
         const oldIndex = items.findIndex((item) => item.id === active.id);

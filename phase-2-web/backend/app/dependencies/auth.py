@@ -65,8 +65,8 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Get user from database
-    statement = select(User).where(User.id == int(user_id))
+    # Get user from database (user_id is now VARCHAR for Better Auth compatibility)
+    statement = select(User).where(User.id == user_id)
     user = session.exec(statement).first()
 
     if user is None:

@@ -72,7 +72,7 @@ class Category(CategoryBase, table=True):
         primary_key=True,
         description="Unique category identifier (auto-generated)"
     )
-    user_id: int = Field(
+    user_id: str = Field(
         foreign_key="users.id",
         index=True,
         description="Owner user ID (from JWT token)"
@@ -133,6 +133,6 @@ class CategoryRead(CategoryBase):
     Used for API responses to ensure clients get complete category data.
     """
     id: int
-    user_id: int
+    user_id: str
     created_at: datetime
     updated_at: datetime

@@ -93,7 +93,7 @@ class Task(TaskBase, table=True):
         primary_key=True,
         description="Unique task identifier (auto-generated)"
     )
-    user_id: int = Field(
+    user_id: str = Field(
         foreign_key="users.id",
         index=True,
         description="Owner user ID (from JWT token)"
@@ -224,7 +224,7 @@ class TaskRead(TaskBase):
     Used for API responses to ensure clients get complete task data.
     """
     id: int
-    user_id: int
+    user_id: str
     parent_task_id: Optional[int]
     created_at: datetime
     updated_at: datetime

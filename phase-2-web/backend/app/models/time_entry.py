@@ -19,7 +19,7 @@ class TimeEntry(SQLModel, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
     task_id: int = Field(foreign_key="tasks.id", index=True)
-    user_id: int = Field(foreign_key="users.id", index=True)
+    user_id: str = Field(foreign_key="users.id", index=True)
 
     # Time tracking
     start_time: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

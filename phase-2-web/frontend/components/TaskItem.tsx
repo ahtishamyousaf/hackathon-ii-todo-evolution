@@ -146,7 +146,7 @@ export default function TaskItem({
                 checked={isSelected}
                 onChange={(e) => {
                   e.stopPropagation();
-                  onToggleSelection(e.shiftKey);
+                  onToggleSelection((e.nativeEvent as MouseEvent).shiftKey);
                 }}
                 className="w-5 h-5 text-blue-600 dark:text-blue-500 border-2 border-blue-400 dark:border-blue-500 rounded-sm focus:ring-2 focus:ring-blue-500 cursor-pointer"
                 aria-label={`Select "${task.title}" for bulk operations`}

@@ -5,6 +5,11 @@ This is the main entry point for the Todo API.
 Configures CORS, middleware, and registers routes.
 """
 
+# Load .env file FIRST (before any other imports)
+from dotenv import load_dotenv
+load_dotenv()
+
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
@@ -21,6 +26,8 @@ from app.routers.time_entries import router as time_entries_router
 from app.routers.task_templates import router as task_templates_router
 from app.routers.notifications import router as notifications_router
 from app.routers.search import router as search_router
+from app.routers.chat import router as chat_router
+from app.routers.chatkit import router as chatkit_router
 
 # Create FastAPI application
 app = FastAPI(
@@ -87,11 +94,49 @@ def on_startup():
     Application startup event.
 
     Creates database tables if they don't exist.
+    Initializes MCP tools for Phase III AI agent.
     Called once when the application starts.
+
+    Validates critical environment variables:
+    - DATABASE_URL: Required for database connection
+    - BETTER_AUTH_SECRET: Required for JWT authentication
+    - OPENAI_API_KEY: Required for Phase III AI agent
     """
-    print("Creating database tables...")
-    create_db_and_tables()
-    print("Database tables created successfully!")
+    # Validate critical environment variables
+    required_env_vars = {
+        "DATABASE_URL": os.getenv("DATABASE_URL"),
+        "BETTER_AUTH_SECRET": os.getenv("BETTER_AUTH_SECRET"),
+        "OPENAI_API_KEY": os.getenv("OPENAI_API_KEY"),
+    }
+
+    missing_vars = [var for var, value in required_env_vars.items() if not value]
+
+    if missing_vars:
+        error_msg = f"CRITICAL: Missing required environment variables: {', '.join(missing_vars)}"
+        print(f"❌ {error_msg}")
+        print("⚠️  Application will continue, but some features may not work properly:")
+        if "OPENAI_API_KEY" in missing_vars:
+            print("   - Phase III AI-Powered Chat will NOT function")
+        if "DATABASE_URL" in missing_vars:
+            print("   - Database operations will FAIL")
+        if "BETTER_AUTH_SECRET" in missing_vars:
+            print("   - JWT authentication will FAIL")
+        print("\nPlease set these variables in your .env file or environment.")
+
+    # Disable automatic table creation - using migrations instead
+    # print("Creating database tables...")
+    # create_db_and_tables()
+    # print("Database tables created successfully!")
+
+    # Phase III: Initialize MCP tools
+    if os.getenv("OPENAI_API_KEY"):
+        from app.mcp.server import initialize_mcp_tools
+        print("Initializing MCP tools for AI agent...")
+        initialize_mcp_tools()
+        print("✅ MCP tools initialized successfully!")
+        print(f"✅ OPENAI_API_KEY loaded: {os.getenv('OPENAI_API_KEY')[:20]}...")
+    else:
+        print("⚠️  Skipping MCP tools initialization (OPENAI_API_KEY not set)")
 
 
 @app.on_event("shutdown")
@@ -121,3 +166,7 @@ app.include_router(dashboard_router)
 app.include_router(time_entries_router)
 app.include_router(task_templates_router)
 app.include_router(notifications_router)
+# Phase III: AI-Powered Todo Chatbot
+app.include_router(chat_router)
+# Phase III: OpenAI ChatKit Integration
+app.include_router(chatkit_router)

@@ -5,6 +5,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { KeyboardShortcutsProvider } from "@/contexts/KeyboardShortcutsContext";
+import ToastContainer from "@/components/ToastContainer";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,12 +21,19 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          src="https://cdn.platform.openai.com/deployments/chatkit/chatkit.js"
+          async
+        />
+      </head>
       <body className={inter.className}>
         <ThemeProvider>
           <AuthProvider>
             <NotificationProvider>
               <KeyboardShortcutsProvider>
                 {children}
+                <ToastContainer />
               </KeyboardShortcutsProvider>
             </NotificationProvider>
           </AuthProvider>

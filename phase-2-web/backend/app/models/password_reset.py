@@ -18,7 +18,7 @@ class PasswordResetToken(SQLModel, table=True):
     __tablename__ = "password_reset_tokens"
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="users.id", index=True, nullable=False)
+    user_id: str = Field(foreign_key="users.id", index=True, nullable=False)
     token: str = Field(max_length=255, unique=True, index=True, nullable=False)
     expires_at: datetime = Field(nullable=False)
     created_at: datetime = Field(

@@ -26,7 +26,7 @@ class Comment(SQLModel, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
     task_id: int = Field(foreign_key="tasks.id", index=True, nullable=False)
-    user_id: int = Field(foreign_key="users.id", index=True, nullable=False)
+    user_id: str = Field(foreign_key="users.id", index=True, nullable=False)
     content: str = Field(nullable=False)
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),

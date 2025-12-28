@@ -18,7 +18,7 @@ class OAuthAccount(SQLModel, table=True):
     __tablename__ = "oauth_accounts"
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="users.id", index=True, nullable=False)
+    user_id: str = Field(foreign_key="users.id", index=True, nullable=False)
 
     # OAuth provider information
     provider: str = Field(max_length=50, nullable=False, index=True)  # google, github, etc.

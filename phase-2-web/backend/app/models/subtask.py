@@ -19,7 +19,7 @@ class Subtask(SQLModel, table=True):
         task_id: Foreign key to parent task
         title: Title of the subtask
         completed: Whether the subtask is completed
-        order: Display order for sorting subtasks
+        sort_order: Display order for sorting subtasks
         created_at: When the subtask was created
         updated_at: When the subtask was last updated
     """
@@ -29,7 +29,7 @@ class Subtask(SQLModel, table=True):
     task_id: int = Field(foreign_key="tasks.id", index=True, nullable=False)
     title: str = Field(max_length=200, nullable=False)
     completed: bool = Field(default=False, nullable=False)
-    order: int = Field(default=0, nullable=False)
+    sort_order: int = Field(default=0, nullable=False)
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
         nullable=False
