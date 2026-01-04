@@ -16,7 +16,7 @@ from app.config import settings
 
 
 # HTTP Bearer token scheme
-security = HTTPBearer()
+security = HTTPBearer(auto_error=True)
 
 
 def get_current_user(
@@ -53,15 +53,14 @@ def get_current_user(
         if user_id is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authentication credentials",
+                detail="Invalid token: missing user ID",
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
     except JWTError as e:
-        print(f"JWT decode error: {e}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
+            detail=f"Invalid token: {str(e)}",
             headers={"WWW-Authenticate": "Bearer"},
         )
 

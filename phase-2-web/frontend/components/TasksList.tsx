@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import { api } from "@/lib/api";
 import type { Task } from "@/types/task";
 import type { Category } from "@/types/category";
@@ -290,6 +291,7 @@ export default function TasksList() {
     try {
       await api.deleteTask(task.id);
       setTasks(tasks.filter((t) => t.id !== task.id));
+      toast.success(`🗑️ Task Deleted: "${task.title}"`, { duration: 4000 });
       addNotification({
         type: "success",
         title: "Task Deleted",
@@ -297,6 +299,7 @@ export default function TasksList() {
       });
     } catch (err) {
       console.error("Failed to delete task:", err);
+      toast.error("Failed to delete task. Please try again.", { duration: 4000 });
       addNotification({
         type: "error",
         title: "Error",
@@ -387,6 +390,7 @@ export default function TasksList() {
       await Promise.all(taskIds.map((id) => api.deleteTask(id)));
       await fetchData();
       setSelectedTaskIds([]);
+      toast.success(`🗑️ ${taskIds.length} task${taskIds.length === 1 ? "" : "s"} deleted`, { duration: 4000 });
       addNotification({
         type: "success",
         title: "Tasks Deleted",
@@ -394,6 +398,7 @@ export default function TasksList() {
       });
     } catch (err) {
       console.error("Failed to delete tasks:", err);
+      toast.error("Failed to delete tasks. Please try again.", { duration: 4000 });
       addNotification({
         type: "error",
         title: "Error",

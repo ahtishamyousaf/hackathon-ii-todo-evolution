@@ -47,6 +47,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Use Better Auth session hook
   const { data: session, isPending, error } = authClient.useSession();
 
+  // Debug logging
+  useEffect(() => {
+    console.log('🔍 Auth Debug:', {
+      hasSession: !!session,
+      hasUser: !!session?.user,
+      isPending,
+      error: error?.message,
+      sessionData: session,
+    });
+  }, [session, isPending, error]);
+
   // Extract session token from Better Auth
   // Better Auth stores session tokens at session.session.token
   const token = session?.session?.token || null;

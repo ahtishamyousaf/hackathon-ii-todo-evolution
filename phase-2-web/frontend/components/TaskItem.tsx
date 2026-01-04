@@ -15,7 +15,9 @@
  */
 
 import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import { api } from "@/lib/api";
+import { useNotifications } from "@/contexts/NotificationContext";
 import type { Task } from "@/types/task";
 import type { Category } from "@/types/category";
 
@@ -45,6 +47,7 @@ export default function TaskItem({
   onToggleSelection,
   isFocused,
 }: TaskItemProps) {
+  const { addNotification } = useNotifications();
   const [isToggling, setIsToggling] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -72,12 +75,32 @@ export default function TaskItem({
     setIsToggling(true);
     try {
       const updatedTask = await api.toggleTaskComplete(task.id);
+      if (updatedTask.completed) {
+        toast.success(`✓ Task Completed: "${updatedTask.title}"`, { duration: 3000 });
+        addNotification({
+          type: "success",
+          title: "Task Completed",
+          message: `"${updatedTask.title}" marked as complete`,
+        });
+      } else {
+        toast.success(`↩️ Task Reopened: "${updatedTask.title}"`, { duration: 3000 });
+        addNotification({
+          type: "info",
+          title: "Task Reopened",
+          message: `"${updatedTask.title}" marked as incomplete`,
+        });
+      }
       if (onUpdate) {
         onUpdate(updatedTask);
       }
     } catch (err) {
       console.error("Failed to toggle task:", err);
-      alert("Failed to update task. Please try again.");
+      toast.error("Failed to update task. Please try again.", { duration: 4000 });
+      addNotification({
+        type: "error",
+        title: "Error",
+        message: "Failed to update task. Please try again.",
+      });
     } finally {
       setIsToggling(false);
     }
@@ -97,12 +120,23 @@ export default function TaskItem({
     setIsDeleting(true);
     try {
       await api.deleteTask(task.id);
+      toast.success(`🗑️ Task Deleted: "${task.title}"`, { duration: 4000 });
+      addNotification({
+        type: "success",
+        title: "Task Deleted",
+        message: `"${task.title}" has been deleted`,
+      });
       if (onDelete) {
         onDelete(task.id);
       }
     } catch (err) {
       console.error("Failed to delete task:", err);
-      alert("Failed to delete task. Please try again.");
+      toast.error("Failed to delete task. Please try again.", { duration: 4000 });
+      addNotification({
+        type: "error",
+        title: "Error",
+        message: "Failed to delete task. Please try again.",
+      });
       setIsDeleting(false);
     }
   };

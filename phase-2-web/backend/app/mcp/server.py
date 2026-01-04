@@ -142,6 +142,10 @@ class MCPServer:
         tool_func = self.tools[tool_name]
 
         try:
+            # Log tool execution start with parameters (excluding session for readability)
+            safe_params = {k: v for k, v in parameters.items() if k not in ['session', 'password']}
+            logger.info(f"🔧 Executing tool '{tool_name}' for user {user_id} with params: {safe_params}")
+
             # Inject user_id into parameters (CRITICAL SECURITY)
             # This ensures all operations are isolated to the authenticated user
             parameters_with_user = {
@@ -153,11 +157,13 @@ class MCPServer:
             # Execute tool
             result = await tool_func(**parameters_with_user)
 
-            logger.info(f"Tool '{tool_name}' executed successfully for user {user_id}")
+            # Log successful execution with result summary
+            result_summary = {k: v for k, v in result.items() if k in ['task_id', 'status', 'title', 'count']} if isinstance(result, dict) else str(result)[:100]
+            logger.info(f"✅ Tool '{tool_name}' executed successfully for user {user_id} → {result_summary}")
             return result
 
         except Exception as e:
-            logger.error(f"Tool '{tool_name}' failed for user {user_id}: {str(e)}")
+            logger.error(f"❌ Tool '{tool_name}' failed for user {user_id}: {str(e)}", exc_info=True)
             raise
 
 
@@ -245,7 +251,7 @@ def get_mcp_tools() -> List[Callable]:
     )
 
     # Import database session dependency
-    from app.database import get_session
+    from app.database import engine
     from sqlmodel import Session
 
     # Wrap MCP tools to work with Agents SDK
@@ -261,13 +267,16 @@ def get_mcp_tools() -> List[Callable]:
         if not user_id:
             raise ValueError("User not authenticated")
 
-        with Session(get_session().__next__()) as session:
-            return await add_task(
+        # Create session directly from engine (not using generator)
+        with Session(engine) as session:
+            result = await add_task(
                 user_id=user_id,
                 title=title,
                 description=description,
                 session=session
             )
+            session.commit()
+            return result
 
     async def wrapped_list_tasks(ctx: RunContextWrapper[Dict[str, Any]], status: str = "all"):
         """List all tasks for the authenticated user.
@@ -279,12 +288,14 @@ def get_mcp_tools() -> List[Callable]:
         if not user_id:
             raise ValueError("User not authenticated")
 
-        with Session(get_session().__next__()) as session:
-            return await list_tasks(
+        with Session(engine) as session:
+            result = await list_tasks(
                 user_id=user_id,
                 status=status,
                 session=session
             )
+            session.commit()
+            return result
 
     async def wrapped_complete_task(ctx: RunContextWrapper[Dict[str, Any]], task_id: int):
         """Mark a task as completed.
@@ -296,12 +307,14 @@ def get_mcp_tools() -> List[Callable]:
         if not user_id:
             raise ValueError("User not authenticated")
 
-        with Session(get_session().__next__()) as session:
-            return await complete_task(
+        with Session(engine) as session:
+            result = await complete_task(
                 user_id=user_id,
                 task_id=task_id,
                 session=session
             )
+            session.commit()
+            return result
 
     async def wrapped_delete_task(ctx: RunContextWrapper[Dict[str, Any]], task_id: int):
         """Delete a task.
@@ -313,12 +326,14 @@ def get_mcp_tools() -> List[Callable]:
         if not user_id:
             raise ValueError("User not authenticated")
 
-        with Session(get_session().__next__()) as session:
-            return await delete_task(
+        with Session(engine) as session:
+            result = await delete_task(
                 user_id=user_id,
                 task_id=task_id,
                 session=session
             )
+            session.commit()
+            return result
 
     async def wrapped_update_task(
         ctx: RunContextWrapper[Dict[str, Any]],
@@ -337,14 +352,16 @@ def get_mcp_tools() -> List[Callable]:
         if not user_id:
             raise ValueError("User not authenticated")
 
-        with Session(get_session().__next__()) as session:
-            return await update_task(
+        with Session(engine) as session:
+            result = await update_task(
                 user_id=user_id,
                 task_id=task_id,
                 title=title,
                 description=description,
                 session=session
             )
+            session.commit()
+            return result
 
     # Playwright browser automation tools
     async def wrapped_navigate_to_url(ctx: RunContextWrapper[Dict[str, Any]], url: str):
@@ -357,12 +374,14 @@ def get_mcp_tools() -> List[Callable]:
         if not user_id:
             raise ValueError("User not authenticated")
 
-        with Session(get_session().__next__()) as session:
-            return await navigate_to_url(
+        with Session(engine) as session:
+            result = await navigate_to_url(
                 url=url,
                 user_id=user_id,
                 session=session
             )
+            session.commit()
+            return result
 
     async def wrapped_take_screenshot(
         ctx: RunContextWrapper[Dict[str, Any]],
@@ -379,13 +398,15 @@ def get_mcp_tools() -> List[Callable]:
         if not user_id:
             raise ValueError("User not authenticated")
 
-        with Session(get_session().__next__()) as session:
-            return await take_screenshot(
+        with Session(engine) as session:
+            result = await take_screenshot(
                 url=url,
                 user_id=user_id,
                 session=session,
                 full_page=full_page
             )
+            session.commit()
+            return result
 
     async def wrapped_extract_page_text(
         ctx: RunContextWrapper[Dict[str, Any]],
@@ -402,13 +423,15 @@ def get_mcp_tools() -> List[Callable]:
         if not user_id:
             raise ValueError("User not authenticated")
 
-        with Session(get_session().__next__()) as session:
-            return await extract_page_text(
+        with Session(engine) as session:
+            result = await extract_page_text(
                 url=url,
                 user_id=user_id,
                 session=session,
                 selector=selector
             )
+            session.commit()
+            return result
 
     # Wrap functions with function_tool decorator for OpenAI Agents SDK
     return [

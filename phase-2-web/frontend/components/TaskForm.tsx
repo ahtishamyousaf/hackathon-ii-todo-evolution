@@ -15,6 +15,7 @@
  */
 
 import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import { api } from "@/lib/api";
 import type { Task, TaskCreate, TaskUpdate } from "@/types/task";
 import type { Category } from "@/types/category";
@@ -111,6 +112,7 @@ export default function TaskForm({
           category_id: categoryId,
         };
         savedTask = await api.updateTask(task.id, updateData);
+        toast.success(`✏️ Task Updated: "${savedTask.title}"`, { duration: 4000 });
       } else {
         // Create new task
         const createData: TaskCreate = {
@@ -120,6 +122,7 @@ export default function TaskForm({
           category_id: categoryId,
         };
         savedTask = await api.createTask(createData);
+        toast.success(`✅ Task Created: "${savedTask.title}"`, { duration: 4000 });
       }
 
       // Reset form on successful create

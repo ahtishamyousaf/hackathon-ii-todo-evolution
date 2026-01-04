@@ -24,11 +24,11 @@ export const auth = betterAuth({
   },
   session: {
     // Use JWT tokens instead of session tokens
-    expiresIn: 60 * 60 * 24, // 24 hours
-    updateAge: 60 * 60, // 1 hour
+    expiresIn: 60 * 60 * 24 * 7, // 7 days (very long for testing)
+    updateAge: 60 * 60 * 24, // 24 hours before refresh
     cookieCache: {
       enabled: true,
-      maxAge: 60 * 60 * 24 // 24 hours
+      maxAge: 60 * 60 * 24 * 7 // 7 days
     }
   },
   // Enable JWT for API authentication

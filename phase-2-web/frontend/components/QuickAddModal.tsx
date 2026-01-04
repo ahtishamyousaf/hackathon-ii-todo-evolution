@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect, FormEvent } from "react";
+import toast from "react-hot-toast";
 import { X, Flag, FolderKanban, Paperclip } from "lucide-react";
 import Button from "./ui/Button";
 import SmartDatePicker from "./SmartDatePicker";
 import FileUploadArea from "./FileUploadArea";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNotifications } from "@/contexts/NotificationContext";
 import type { TaskCreate, Task } from "@/types/task";
 import type { Category } from "@/types/category";
 
@@ -26,6 +28,7 @@ export default function QuickAddModal({
   editTask,
 }: QuickAddModalProps) {
   const { token } = useAuth();
+  const { addNotification } = useNotifications();
   const isEditMode = !!editTask;
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -149,9 +152,21 @@ export default function QuickAddModal({
       if (isEditMode && editTask) {
         // Update existing task
         await api.updateTask(editTask.id, taskData);
+        toast.success(`✏️ Task Updated: "${title}"`, { duration: 4000 });
+        addNotification({
+          type: "success",
+          title: "Task Updated",
+          message: `"${title}" has been updated`,
+        });
       } else {
         // Create new task
         await api.createTask(taskData);
+        toast.success(`✅ Task Created: "${title}"`, { duration: 4000 });
+        addNotification({
+          type: "success",
+          title: "Task Created",
+          message: `"${title}" has been added to your tasks`,
+        });
       }
 
       // Reset form
@@ -166,7 +181,12 @@ export default function QuickAddModal({
       onClose();
     } catch (err) {
       console.error(`Failed to ${isEditMode ? 'update' : 'create'} task:`, err);
-      alert(`Failed to ${isEditMode ? 'update' : 'create'} task. Please try again.`);
+      toast.error(`Failed to ${isEditMode ? 'update' : 'create'} task. Please try again.`, { duration: 4000 });
+      addNotification({
+        type: "error",
+        title: "Error",
+        message: `Failed to ${isEditMode ? 'update' : 'create'} task. Please try again.`,
+      });
     } finally {
       setIsSubmitting(false);
     }

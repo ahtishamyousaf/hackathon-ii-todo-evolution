@@ -26,8 +26,7 @@ from app.routers.time_entries import router as time_entries_router
 from app.routers.task_templates import router as task_templates_router
 from app.routers.notifications import router as notifications_router
 from app.routers.search import router as search_router
-from app.routers.chat import router as chat_router
-from app.routers.chatkit import router as chatkit_router
+from app.routers.simple_chat import router as simple_chat_router
 
 # Create FastAPI application
 app = FastAPI(
@@ -129,14 +128,23 @@ def on_startup():
     # print("Database tables created successfully!")
 
     # Phase III: Initialize MCP tools
-    if os.getenv("OPENAI_API_KEY"):
+    ai_provider = os.getenv("AI_PROVIDER", "openai").lower()
+    openai_key = os.getenv("OPENAI_API_KEY")
+    gemini_key = os.getenv("GEMINI_API_KEY")
+
+    if openai_key or gemini_key:
         from app.mcp.server import initialize_mcp_tools
         print("Initializing MCP tools for AI agent...")
         initialize_mcp_tools()
         print("✅ MCP tools initialized successfully!")
-        print(f"✅ OPENAI_API_KEY loaded: {os.getenv('OPENAI_API_KEY')[:20]}...")
+        print(f"✅ AI_PROVIDER: {ai_provider}")
+
+        if ai_provider == "gemini" and gemini_key:
+            print(f"✅ GEMINI_API_KEY loaded: {gemini_key[:20]}...")
+        elif openai_key:
+            print(f"✅ OPENAI_API_KEY loaded: {openai_key[:20]}...")
     else:
-        print("⚠️  Skipping MCP tools initialization (OPENAI_API_KEY not set)")
+        print("⚠️  Skipping MCP tools initialization (No AI API key set)")
 
 
 @app.on_event("shutdown")
@@ -166,7 +174,5 @@ app.include_router(dashboard_router)
 app.include_router(time_entries_router)
 app.include_router(task_templates_router)
 app.include_router(notifications_router)
-# Phase III: AI-Powered Todo Chatbot
-app.include_router(chat_router)
-# Phase III: OpenAI ChatKit Integration
-app.include_router(chatkit_router)
+# Phase III: AI-Powered Todo Chatbot (Simple endpoint)
+app.include_router(simple_chat_router)

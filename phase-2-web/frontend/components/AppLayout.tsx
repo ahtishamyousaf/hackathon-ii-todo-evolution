@@ -7,8 +7,8 @@ import { useNotifications } from "@/contexts/NotificationContext";
 import Sidebar from "./Sidebar";
 import NotificationPanel from "./NotificationPanel";
 import KeyboardShortcutsHelp from "./KeyboardShortcutsHelp";
-import FloatingChatWidget from "./FloatingChatWidget";
-import { Menu, Bell, Share2, Search, Keyboard, MessageSquare, X } from "lucide-react";
+import QuickAddModal from "./QuickAddModal";
+import { Menu, Bell, Share2, Search, Keyboard, X } from "lucide-react";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -30,10 +30,12 @@ export default function AppLayout({
   const [notificationPanelOpen, setNotificationPanelOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [keyboardShortcutsOpen, setKeyboardShortcutsOpen] = useState(false);
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
   const { user } = useAuth();
   const { unreadCount } = useNotifications();
 
   const handleTaskCreated = () => {
+    setQuickAddOpen(false);
     // Refresh the page to show new task
     window.location.reload();
   };
@@ -75,6 +77,7 @@ export default function AppLayout({
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
+        onNewTask={() => setQuickAddOpen(true)}
         onCollapsedChange={setSidebarCollapsed}
       />
 
@@ -151,15 +154,6 @@ export default function AppLayout({
                   <Keyboard className="w-5 h-5 text-gray-600 dark:text-gray-300" />
                 </button>
 
-                {/* AI Chat Button */}
-                <button
-                  onClick={() => router.push('/chat')}
-                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                  title="AI Chat"
-                >
-                  <MessageSquare className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-                </button>
-
                 {/* Search Button (Mobile Hidden) */}
                 <button
                   onClick={handleSearch}
@@ -211,8 +205,12 @@ export default function AppLayout({
         </main>
       </div>
 
-      {/* Floating Chat Widget */}
-      <FloatingChatWidget />
+      {/* Quick Add Task Modal */}
+      <QuickAddModal
+        isOpen={quickAddOpen}
+        onClose={() => setQuickAddOpen(false)}
+        onTaskCreated={handleTaskCreated}
+      />
     </div>
   );
 }
