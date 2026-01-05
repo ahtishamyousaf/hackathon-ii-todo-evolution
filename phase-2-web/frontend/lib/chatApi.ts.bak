@@ -1,0 +1,404 @@
+/**
+ * Chat API client for Phase III: AI-Powered Todo Chatbot
+ *
+ * Provides functions to interact with the chat backend.
+ */
+
+import type { ChatRequest, ChatResponse } from '@/types/chat';
+import { api } from './api';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+/**
+ * Get authentication headers with JWT token.
+ *
+ * Args:
+ *   token: Optional JWT token to include in Authorization header
+ *
+ * Returns:
+ *   Headers object with Authorization bearer token
+ */
+async function getAuthHeaders(token?: string | null): Promise<HeadersInit> {
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+
+  // Use provided token or fallback to api client token
+  const authToken = token || api.getToken();
+
+  if (authToken) {
+    headers['Authorization'] = `Bearer ${authToken}`;
+  }
+
+  return headers;
+}
+
+/**
+ * Send a chat message and get AI response.
+ *
+ * Args:
+ *   request: ChatRequest with message and optional conversation_id
+ *
+ * Returns:
+ *   ChatResponse with conversation_id, response text, and optional tool_calls
+ *
+ * Throws:
+ *   Error if request fails or server returns error
+ *
+ * Example:
+ *   const response = await sendChatMessage({
+ *     message: "Add a task to buy groceries"
+ *   });
+ *   // Returns: {
+ *   //   conversation_id: 1,
+ *   //   response: "I've added 'Buy groceries' to your tasks!",
+ *   //   tool_calls: [...]
+ *   // }
+ */
+export async function sendChatMessage(request: ChatRequest, token?: string | null): Promise<ChatResponse> {
+  try {
+    const headers = await getAuthHeaders(token);
+
+    const response = await fetch(`${API_URL}/api/chat`, {
+      method: 'POST',
+      headers,
+      credentials: 'include', // Include cookies for Better Auth
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+
+      if (response.status === 401) {
+        // Redirect to login on session expiration
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
+        throw new Error('Session expired. Please log in again.');
+      }
+
+      if (response.status === 403) {
+        throw new Error('Not authorized to access this conversation.');
+      }
+
+      if (response.status === 404) {
+        throw new Error('Conversation not found.');
+      }
+
+      throw new Error(
+        errorData.detail || `Failed to send message: ${response.statusText}`
+      );
+    }
+
+    const data: ChatResponse = await response.json();
+    return data;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('An unexpected error occurred while sending chat message.');
+  }
+}
+
+/**
+ * Get list of user's conversations.
+ *
+ * Returns:
+ *   Array of conversation objects with metadata
+ *
+ * Throws:
+ *   Error if request fails
+ *
+ * Example:
+ *   const conversations = await getConversations();
+ *   // Returns: [
+ *   //   { id: 1, created_at: "2025-12-27T...", updated_at: "..." },
+ *   //   ...
+ *   // ]
+ */
+export async function getConversations(token?: string | null): Promise<any[]> {
+  try {
+    const headers = await getAuthHeaders(token);
+
+    const response = await fetch(`${API_URL}/api/chat/conversations`, {
+      method: 'GET',
+      headers,
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        // Redirect to login on session expiration
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
+        throw new Error('Session expired. Please log in again.');
+      }
+
+      throw new Error(`Failed to fetch conversations: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.conversations || [];
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('An unexpected error occurred while fetching conversations.');
+  }
+}
+
+/**
+ * Get all messages for a specific conversation.
+ *
+ * Args:
+ *   conversationId: ID of the conversation to load messages for
+ *
+ * Returns:
+ *   Array of message objects (user and assistant messages)
+ *
+ * Throws:
+ *   Error if request fails, conversation not found, or not authorized
+ *
+ * Example:
+ *   const messages = await getConversationMessages(1);
+ *   // Returns: [
+ *   //   { id: 1, role: "user", content: "Add task to buy milk", created_at: "..." },
+ *   //   { id: 2, role: "assistant", content: "I've added that task!", created_at: "..." },
+ *   //   ...
+ *   // ]
+ */
+export async function getConversationMessages(conversationId: number, token?: string | null): Promise<any[]> {
+  try {
+    const headers = await getAuthHeaders(token);
+
+    const response = await fetch(`${API_URL}/api/chat/conversations/${conversationId}/messages`, {
+      method: 'GET',
+      headers,
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        // Redirect to login on session expiration
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
+        throw new Error('Session expired. Please log in again.');
+      }
+
+      if (response.status === 403) {
+        throw new Error('Not authorized to access this conversation.');
+      }
+
+      if (response.status === 404) {
+        throw new Error('Conversation not found.');
+      }
+
+      throw new Error(`Failed to fetch conversation messages: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.messages || [];
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('An unexpected error occurred while fetching conversation messages.');
+  }
+}
+
+/**
+ * Delete a conversation and all its messages.
+ *
+ * Args:
+ *   conversationId: ID of the conversation to delete
+ *
+ * Returns:
+ *   Promise that resolves when deletion is complete
+ *
+ * Throws:
+ *   Error if request fails, conversation not found, or not authorized
+ *
+ * Example:
+ *   await deleteConversation(42);
+ */
+export async function deleteConversation(conversationId: number, token?: string | null): Promise<void> {
+  try {
+    const headers = await getAuthHeaders(token);
+
+    const response = await fetch(`${API_URL}/api/chat/conversations/${conversationId}`, {
+      method: 'DELETE',
+      headers,
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        // Redirect to login on session expiration
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
+        throw new Error('Session expired. Please log in again.');
+      }
+
+      if (response.status === 403) {
+        throw new Error('Not authorized to delete this conversation.');
+      }
+
+      if (response.status === 404) {
+        throw new Error('Conversation not found.');
+      }
+
+      throw new Error(`Failed to delete conversation: ${response.statusText}`);
+    }
+
+    // 204 No Content - successful deletion
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('An unexpected error occurred while deleting conversation.');
+  }
+}
+
+/**
+ * Send a chat message and receive streaming AI response via Server-Sent Events.
+ *
+ * Args:
+ *   request: ChatRequest with message and optional conversation_id
+ *   onChunk: Callback function called for each chunk of data
+ *   onError: Optional callback for errors
+ *   onDone: Optional callback when stream completes
+ *
+ * Returns:
+ *   Promise that resolves when stream is complete
+ *
+ * Throws:
+ *   Error if connection fails or authentication fails
+ *
+ * Example:
+ *   let conversationId: number | null = null;
+ *   let fullResponse = '';
+ *
+ *   await sendChatMessageStream(
+ *     { message: "Add a task" },
+ *     (chunk) => {
+ *       if (chunk.type === 'conversation_id') {
+ *         conversationId = chunk.id;
+ *       } else if (chunk.type === 'content') {
+ *         fullResponse += chunk.delta;
+ *         console.log(chunk.delta); // Display word-by-word
+ *       } else if (chunk.type === 'tool_call') {
+ *         console.log('Tool executed:', chunk.data);
+ *       }
+ *     },
+ *     (error) => console.error('Stream error:', error),
+ *     () => console.log('Stream done!')
+ *   );
+ */
+export async function sendChatMessageStream(
+  request: ChatRequest,
+  onChunk: (chunk: any) => void,
+  onError?: (error: Error) => void,
+  onDone?: () => void,
+  token?: string | null
+): Promise<void> {
+  try {
+    const headers = await getAuthHeaders(token);
+
+    const response = await fetch(`${API_URL}/api/chat/stream`, {
+      method: 'POST',
+      headers,
+      credentials: 'include',
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+
+      if (response.status === 401) {
+        // Redirect to login on session expiration
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
+        throw new Error('Session expired. Please log in again.');
+      }
+
+      if (response.status === 403) {
+        throw new Error('Not authorized to access this conversation.');
+      }
+
+      if (response.status === 404) {
+        throw new Error('Conversation not found.');
+      }
+
+      throw new Error(
+        errorData.detail || `Failed to start streaming: ${response.statusText}`
+      );
+    }
+
+    // Process Server-Sent Events stream
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder();
+
+    if (!reader) {
+      throw new Error('Response body is not readable');
+    }
+
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (done) {
+        break;
+      }
+
+      // Decode chunk and add to buffer
+      buffer += decoder.decode(value, { stream: true });
+
+      // Process complete SSE messages (separated by \n\n)
+      const lines = buffer.split('\n\n');
+      buffer = lines.pop() || ''; // Keep incomplete message in buffer
+
+      for (const line of lines) {
+        if (!line.trim()) continue;
+
+        // Parse SSE format: "data: {json}"
+        if (line.startsWith('data: ')) {
+          const jsonData = line.substring(6);
+          try {
+            const chunk = JSON.parse(jsonData);
+
+            // Handle different chunk types
+            if (chunk.type === 'error') {
+              const error = new Error(chunk.message || 'Stream error occurred');
+              if (onError) onError(error);
+              throw error;
+            } else if (chunk.type === 'done') {
+              if (onDone) onDone();
+              return;
+            } else {
+              onChunk(chunk);
+            }
+          } catch (parseError) {
+            console.error('Failed to parse SSE chunk:', jsonData);
+          }
+        }
+      }
+    }
+
+    // Stream ended naturally
+    if (onDone) onDone();
+
+  } catch (error) {
+    if (error instanceof Error) {
+      if (onError) onError(error);
+      throw error;
+    }
+    const unknownError = new Error('An unexpected error occurred during streaming.');
+    if (onError) onError(unknownError);
+    throw unknownError;
+  }
+}
